@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mezaneyo School - Student Management</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f4f8;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1a2a3a;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        button {
+            background: #2d6a4f;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+        }
+        button:hover {
+            background: #1b4332;
+        }
+        button:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+        .student-list {
+            margin-top: 30px;
+        }
+        .student-item {
+            background: #f8f9fa;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border-left: 4px solid #2d6a4f;
+            display: flex;
+            justify-content: space-between;
+        }
+        .student-name {
+            font-weight: bold;
+        }
+        .student-grade {
+            color: #555;
+        }
+        .success-msg {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            display: none;
+        }
+        .error-msg {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            display: none;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 10px;
+        }
+        .badge {
+            background: #2d6a4f;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Mezaneyo School</h1>
+        
+        <!-- Add Student Form -->
+        <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="fullName" placeholder="e.g., Chimwemwe Banda">
+        </div>
+        <div class="form-group">
+            <label>Grade/Class</label>
+            <input type="text" id="grade" placeholder="e.g., Standard 5">
+        </div>
+        <div class="form-group">
+            <label>Guardian Name</label>
+            <input type="text" id="guardianName" placeholder="e.g., John Banda">
+        </div>
+        <div class="form-group">
+            <label>Guardian Phone</label>
+            <input type="text" id="guardianPhone" placeholder="e.g., +265 888 123 456">
+        </div>
+        <button id="addBtn" onclick="addStudent()">➕ Add Student</button>
+        
+        <!-- Messages -->
+        <div id="successMsg" class="success-msg">✅ Student added successfully!</div>
+        <div id="errorMsg" class="error-msg">❌ Error: <span id="errorText"></span></div>
+        
+        <!-- Student List -->
+        <div class="student-list">
+            <h2>📋 All Students <span id="count" class="badge"></span></h2>
+            <div id="studentList"></div>
+        </div>
+    </div>
+
+    <script>
+        // =============================================
+        // YOUR SUPABASE CREDENTIALS
+        // =============================================
+        const SUPABASE_URL = 'https://nivmrwbusbeppdssmfpj.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_kwF_yAmJ5AWnbaIe57snrw_fXng7-6a';
+        
+        // Initialize Supabase client - CHANGED NAME to avoid conflict
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // =============================================
+        // FUNCTION: Load all students
+        // =============================================
+        async function loadStudents() {
+            const listDiv = document.getElementById('studentList');
+            const countSpan = document.getElementById('count');
+            
+            // Show loading
+            listDiv.innerHTML = '<div class="loading">⏳ Loading students...</div>';
+            
+            try {
+                // CHANGED: supabase to supabaseClient
+                const { data, error } = await supabaseClient
+                    .from('students')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                // Update count
+                countSpan.textContent = data.length;
+                
+                if (data.length === 0) {
+                    listDiv.innerHTML = '<p style="color:#666; text-align:center; padding:20px;">No students yet. Add one above! 📝</p>';
+                    return;
+                }
+                
+                // Display students
+                listDiv.innerHTML = data.map(student => `
+                    <div class="student-item">
+                        <div>
+                            <span class="student-name">${student.full_name}</span>
+                            <span style="margin-left:10px; color:#666;">👨‍👩‍👧 ${student.guardian_name || 'No guardian'}</span>
+                        </div>
+                        <div>
+                            <span class="student-grade">📖 ${student.grade}</span>
+                            ${student.guardian_phone ? `<span style="margin-left:10px; color:#666; font-size:14px;">📞 ${student.guardian_phone}</span>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Load error:', error);
+                listDiv.innerHTML = `<div class="error-msg" style="display:block;">❌ Failed to load: ${error.message}</div>`;
+            }
+        }
+
+        // =============================================
+        // FUNCTION: Add a new student
+        // =============================================
+        async function addStudent() {
+            const nameInput = document.getElementById('fullName');
+            const gradeInput = document.getElementById('grade');
+            const guardianNameInput = document.getElementById('guardianName');
+            const guardianPhoneInput = document.getElementById('guardianPhone');
+            const addBtn = document.getElementById('addBtn');
+            const successMsg = document.getElementById('successMsg');
+            const errorMsg = document.getElementById('errorMsg');
+            const errorText = document.getElementById('errorText');
+            
+            // Hide messages
+            successMsg.style.display = 'none';
+            errorMsg.style.display = 'none';
+            
+            // Validate required fields
+            const fullName = nameInput.value.trim();
+            const grade = gradeInput.value.trim();
+            
+            if (!fullName || !grade) {
+                errorText.textContent = 'Full Name and Grade are required!';
+                errorMsg.style.display = 'block';
+                return;
+            }
+            
+            // Disable button and show loading
+            addBtn.disabled = true;
+            addBtn.textContent = '⏳ Adding...';
+            
+            try {
+                // CHANGED: supabase to supabaseClient
+                const { data, error } = await supabaseClient
+                    .from('students')
+                    .insert([
+                        {
+                            full_name: fullName,
+                            grade: grade,
+                            guardian_name: guardianNameInput.value.trim() || null,
+                            guardian_phone: guardianPhoneInput.value.trim() || null
+                        }
+                    ])
+                    .select();
+                
+                if (error) throw error;
+                
+                // Success!
+                successMsg.style.display = 'block';
+                
+                // Clear form
+                nameInput.value = '';
+                gradeInput.value = '';
+                guardianNameInput.value = '';
+                guardianPhoneInput.value = '';
+                
+                // Reload the list to show new student
+                await loadStudents();
+                
+                // Auto-hide success message after 3 seconds
+                setTimeout(() => {
+                    successMsg.style.display = 'none';
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Add error:', error);
+                errorText.textContent = error.message;
+                errorMsg.style.display = 'block';
+            } finally {
+                // Re-enable button
+                addBtn.disabled = false;
+                addBtn.textContent = '➕ Add Student';
+            }
+        }
+
+        // =============================================
+        // Load students when page opens
+        // =============================================
+        window.onload = function() {
+            loadStudents();
+            
+            // Allow Enter key to submit
+            document.querySelectorAll('input').forEach(input => {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') addStudent();
+                });
+            });
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEZANEYO ONLINE SCHOOL | Secondary Education</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Add these styles to your existing CSS */
+        .auth-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .auth-status .user-name {
+            color: white;
+            font-size: 14px;
+        }
+        .auth-status .btn-logout {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .auth-status .btn-logout:hover {
+            background: #c82333;
+        }
+        .btn-dashboard {
+            background: #2d6a4f;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            text-decoration: none;
+        }
+        .btn-dashboard:hover {
+            background: #1b4332;
+        }
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background: white;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+            border-radius: 8px;
+            z-index: 1000;
+        }
+        .dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            border-radius: 8px;
+        }
+        .dropdown-content a:hover {
+            background: #f0f0f0;
+        }
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <img src="logo.png" alt="MEZANEYO Logo" onerror="this.src='https://via.placeholder.com/40x40?text=M'">
+                <span>MEZANEYO</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html" class="active">Home</a></li>
+                <li><a href="courses.html">Courses</a></li>
+                <li><a href="portal.html">Student Portal</a></li>
+                <li id="authNav">
+                    <a href="login.html" id="authLink">Login</a>
+                </li>
+            </ul>
+            <div class="mobile-menu">☰</div>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Welcome to <span class="highlight">MEZANEYO</span> ONLINE SCHOOL</h1>
+            <p>Quality secondary education accessible anywhere, anytime. Master subjects at your own pace with expert-crafted lessons.</p>
+            <div class="hero-buttons">
+                <a href="signup.html" class="btn btn-primary">Start Learning →</a>
+                <a href="#features" class="btn btn-secondary">Learn More</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <h2>Why Choose MEZANEYO?</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📚</div>
+                <h3>Complete Curriculum</h3>
+                <p>Mathematics, Sciences, Languages, Humanities - aligned with national standards.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎥</div>
+                <h3>Video Lessons</h3>
+                <p>Engaging video explanations with real-world examples and animations.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📝</div>
+                <h3>Interactive Quizzes</h3>
+                <p>Test your knowledge with instant feedback and detailed explanations.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Track Progress</h3>
+                <p>Monitor your learning journey with detailed analytics and certificates.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="popular-courses">
+        <h2>Popular Courses</h2>
+        <div class="course-grid" id="popularCourses"></div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>MEZANEYO ONLINE SCHOOL</h3>
+                <p>Empowering secondary students with quality digital education.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="courses.html">Courses</a></li>
+                    <li><a href="dashboard.html">Dashboard</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Contact</h4>
+                <p>Email: info@mezaneyo.com</p>
+                <p>Phone: +250 99 5514 049</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 MEZANEYO ONLINE SCHOOL. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // =============================================
+        // SUPABASE CONFIGURATION
+        // =============================================
+        const SUPABASE_URL = 'https://nivmrwbusbeppdssmfpj.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_kwF_yAmJ5AWnbaIe57snrw_fXng7-6a';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // =============================================
+        // CHECK AUTH STATUS
+        // =============================================
+        async function checkAuth() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            const authNav = document.getElementById('authNav');
+            
+            if (session) {
+                const user = session.user;
+                const fullName = user.user_metadata?.full_name || user.email;
+                const role = user.user_metadata?.role || 'student';
+                
+                // Get dashboard URL based on role
+                let dashboardUrl = 'student-dashboard.html';
+                if (role === 'admin') dashboardUrl = 'admin-dashboard.html';
+                else if (role === 'teacher') dashboardUrl = 'teacher-dashboard.html';
+                
+                authNav.innerHTML = `
+                    <div class="auth-status">
+                        <span class="user-name">👋 ${fullName}</span>
+                        <a href="${dashboardUrl}" class="btn-dashboard">📊 Dashboard</a>
+                        <button class="btn-logout" onclick="logout()">Logout</button>
+                    </div>
+                `;
+            } else {
+                authNav.innerHTML = `<a href="login.html" id="authLink">Login</a>`;
+            }
+        }
+
+        // =============================================
+        // LOGOUT
+        // =============================================
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'index.html';
+        }
+
+        // =============================================
+        // LOAD POPULAR COURSES (from your data.js)
+        // =============================================
+        function loadPopularCourses() {
+            // If you have courses data in data.js, use it
+            // Otherwise, show default courses
+            const courses = [
+                { title: 'Mathematics', description: 'Algebra, Geometry, Calculus & Statistics', icon: '📐' },
+                { title: 'English Language', description: 'Grammar, Literature, Writing & Comprehension', icon: '📖' },
+                { title: 'Physics', description: 'Mechanics, Electricity, Optics & Modern Physics', icon: '⚛️' },
+                { title: 'Chemistry', description: 'Organic, Inorganic, Physical Chemistry & Lab Work', icon: '🧪' },
+                { title: 'Biology', description: 'Cell Biology, Genetics, Ecology & Human Anatomy', icon: '🧬' },
+                { title: 'History', description: 'World History, African History & Modern Events', icon: '🏛️' }
+            ];
+            
+            const grid = document.getElementById('popularCourses');
+            if (grid) {
+                grid.innerHTML = courses.map(course => `
+                    <div class="course-card">
+                        <div class="course-icon">${course.icon}</div>
+                        <h3>${course.title}</h3>
+                        <p>${course.description}</p>
+                        <a href="courses.html" class="btn btn-sm">Learn More →</a>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // =============================================
+        // INIT
+        // =============================================
+        window.onload = function() {
+            checkAuth();
+            loadPopularCourses();
+        };
+    </script>
+</body>
+</html>
