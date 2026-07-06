@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - MEZANEYO LMS</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background: #f0f4f8; }
+
+        .sidebar {
+            width: 260px;
+            height: 100vh;
+            background: #1a2a3a;
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding: 20px;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+        .sidebar .logo { font-size: 22px; font-weight: 700; padding: 10px 0 25px 0; border-bottom: 1px solid #2d4a5a; }
+        .sidebar .logo span { color: #4caf50; }
+        .sidebar nav ul { list-style: none; padding-top: 15px; }
+        .sidebar nav ul li {
+            padding: 10px 14px;
+            margin-bottom: 3px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        .sidebar nav ul li:hover, .sidebar nav ul li.active { background: #2d4a5a; }
+        .sidebar nav ul li .icon { margin-right: 10px; }
+        .sidebar nav ul li a { color: white; text-decoration: none; display: block; }
+
+        .main-content { margin-left: 260px; padding: 25px; min-height: 100vh; }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .header h1 { font-size: 22px; }
+        .header-right { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .btn-logout { background: #dc3545; color: white; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        .btn { background: #2d6a4f; color: white; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        .btn:hover { opacity: 0.85; }
+        .btn-danger { background: #dc3545; }
+        .btn-warning { background: #ffc107; color: #333; }
+        .btn-sm { padding: 4px 12px; font-size: 12px; }
+        .btn-primary { background: #007bff; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: white;
+            padding: 18px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .stat-card h3 { font-size: 28px; color: #1a2a3a; }
+        .stat-card p { color: #666; font-size: 13px; }
+        .stat-card .icon { font-size: 24px; }
+
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .section h2 { margin-bottom: 12px; font-size: 17px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        table th, table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee; }
+        table th { background: #f8f9fa; font-weight: 600; }
+
+        .live-badge {
+            background: #dc3545;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .menu-toggle {
+            display: none;
+            background: #1a2a3a;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 22px;
+            cursor: pointer;
+            z-index: 1001;
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+        .overlay.active { display: block; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-content h2 { margin-bottom: 15px; }
+        .modal-content .form-group { margin-bottom: 12px; }
+        .modal-content label { display: block; font-weight: 500; margin-bottom: 4px; font-size: 13px; }
+        .modal-content input, .modal-content select, .modal-content textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+        }
+        .modal-content textarea { min-height: 80px; }
+        .modal-actions { display: flex; gap: 10px; margin-top: 15px; }
+        .modal-actions button { padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        .btn-save { background: #2d6a4f; color: white; }
+        .btn-cancel { background: #6c757d; color: white; }
+
+        .success-msg, .error-msg { padding: 10px; border-radius: 6px; margin: 10px 0; display: none; font-size: 14px; }
+        .success-msg { background: #d4edda; color: #155724; }
+        .error-msg { background: #f8d7da; color: #721c24; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .lesson-card {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+        }
+        .lesson-card h4 { margin-bottom: 5px; }
+        .lesson-card .meta { color: #666; font-size: 12px; }
+        .lesson-card .material-link {
+            display: inline-block;
+            background: #e9ecef;
+            padding: 2px 10px;
+            border-radius: 4px;
+            margin: 3px 5px 3px 0;
+            font-size: 12px;
+            text-decoration: none;
+            color: #2d6a4f;
+        }
+        .lesson-card .material-link:hover { background: #d4edda; }
+
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); width: 280px; }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; padding: 15px; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .menu-toggle { display: inline-block; }
+            .sidebar:not(.open) { transform: translateX(-100%); }
+        }
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .header { flex-direction: column; align-items: flex-start; }
+            .header-right { width: 100%; justify-content: space-between; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<div class="sidebar" id="sidebar">
+    <div class="logo">🏫 MEZANEYO <span>LMS</span></div>
+    <nav>
+        <ul>
+            <li class="active" onclick="showTab('dashboard')"><span class="icon">📊</span> Dashboard</li>
+            <li onclick="showTab('live')"><span class="icon">📹</span> Live Classes</li>
+            <li onclick="showTab('lessons')"><span class="icon">📖</span> Lessons</li>
+            <li onclick="showTab('assignments')"><span class="icon">📝</span> Assignments</li>
+            <li onclick="showTab('quizzes')"><span class="icon">🧪</span> Quizzes</li>
+            <li onclick="showTab('qa')"><span class="icon">❓</span> Q&A</li>
+            <li onclick="showTab('forums')"><span class="icon">💬</span> Forums</li>
+            <li onclick="showTab('students')"><span class="icon">👨‍🎓</span> Students</li>
+            <li><a href="index.html"><span class="icon">🏠</span> Back to Site</a></li>
+        </ul>
+    </nav>
+</div>
+
+<div class="main-content">
+    <div class="header">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">☰</button>
+            <h1 id="pageTitle">📊 Dashboard</h1>
+        </div>
+        <div class="header-right">
+            <span id="teacherName" style="font-weight:500;"></span>
+            <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div id="successMsg" class="success-msg">✅ Success!</div>
+    <div id="errorMsg" class="error-msg">❌ <span id="errorText"></span></div>
+
+    <!-- DASHBOARD -->
+    <div id="tab-dashboard" class="tab-content active">
+        <div class="stats-grid">
+            <div class="stat-card"><div class="icon">👨‍🎓</div><h3 id="totalStudents">0</h3><p>My Students</p></div>
+            <div class="stat-card"><div class="icon">📅</div><h3 id="todayAttendance">0%</h3><p>Today's Attendance</p></div>
+            <div class="stat-card"><div class="icon">📝</div><h3 id="pendingAssignments">0</h3><p>Pending Assignments</p></div>
+            <div class="stat-card"><div class="icon">📹</div><h3 id="liveSessions">0</h3><p>Live Sessions</p></div>
+        </div>
+        <div class="section">
+            <h2>📋 Recent Activity</h2>
+            <div id="recentActivity"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- LIVE CLASSES -->
+    <div id="tab-live" class="tab-content">
+        <div class="section">
+            <div class="section-header">
+                <h2>📹 Live Classes</h2>
+                <button class="btn" onclick="openModal('liveModal')">+ Go Live Now</button>
+            </div>
+            <div id="liveList"><p style="color:#999;">Loading...</p></div>
+        </div>
+        <div class="section">
+            <div class="section-header">
+                <h2>🖊️ Interactive Whiteboard</h2>
+                <button class="btn btn-primary" onclick="openModal('whiteboardModal')">+ Start Whiteboard</button>
+            </div>
+            <div id="whiteboardList"><p style="color:#999;">No active whiteboard sessions</p></div>
+        </div>
+    </div>
+
+    <!-- LESSONS -->
+    <div id="tab-lessons" class="tab-content">
+        <div class="section">
+            <div class="section-header">
+                <h2>📖 My Lessons</h2>
+                <button class="btn" onclick="openModal('lessonModal')">+ Create Lesson</button>
+            </div>
+            <div id="lessonList"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- ASSIGNMENTS -->
+    <div id="tab-assignments" class="tab-content">
+        <div class="section">
+            <div class="section-header">
+                <h2>📝 Assignments</h2>
+                <button class="btn" onclick="openModal('assignmentModal')">+ Create Assignment</button>
+            </div>
+            <div id="assignmentList"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- QUIZZES -->
+    <div id="tab-quizzes" class="tab-content">
+        <div class="section">
+            <div class="section-header">
+                <h2>🧪 Quizzes</h2>
+                <button class="btn" onclick="openModal('quizModal')">+ Create Quiz</button>
+            </div>
+            <div id="quizList"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- Q&A -->
+    <div id="tab-qa" class="tab-content">
+        <div class="section">
+            <h2>❓ Student Questions</h2>
+            <div id="qaList"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- FORUMS -->
+    <div id="tab-forums" class="tab-content">
+        <div class="section">
+            <div class="section-header">
+                <h2>💬 Class Forums</h2>
+                <button class="btn" onclick="openModal('forumModal')">+ Create Forum</button>
+            </div>
+            <div id="forumList"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- STUDENTS -->
+    <div id="tab-students" class="tab-content">
+        <div class="section">
+            <h2>👨‍🎓 My Students</h2>
+            <div id="studentTable"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- MODALS -->
+<!-- ============================================ -->
+
+<!-- LIVE MODAL -->
+<div id="liveModal" class="modal">
+    <div class="modal-content">
+        <h2>📹 Go Live</h2>
+        <div class="form-group"><label>Class</label><select id="liveClass"><option>Select Class</option></select></div>
+        <div class="form-group"><label>Subject</label><select id="liveSubject"><option>Select Subject</option></select></div>
+        <div class="form-group"><label>Title</label><input type="text" id="liveTitle" placeholder="e.g., Algebra Revision"></div>
+        <div class="form-group"><label>Description</label><textarea id="liveDesc" placeholder="What will you cover?"></textarea></div>
+        <div class="modal-actions">
+            <button class="btn-save" onclick="startLive()">🚀 Start Live</button>
+            <button class="btn-cancel" onclick="closeModal('liveModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- WHITEBOARD MODAL -->
+<div id="whiteboardModal" class="modal">
+    <div class="modal-content">
+        <h2>🖊️ Start Whiteboard</h2>
+        <div class="form-group"><label>Class</label><select id="wbClass"><option>Select Class</option></select></div>
+        <div class="form-group"><label>Subject</label><select id="wbSubject"><option>Select Subject</option></select></div>
+        <div class="form-group"><label>Session Name</label><input type="text" id="wbTitle" placeholder="e.g., Algebra Revision"></div>
+        <div class="form-group"><label>Description</label><textarea id="wbDesc" placeholder="What will you cover?"></textarea></div>
+        <div class="modal-actions">
+            <button class="btn-save" onclick="startWhiteboard()">🚀 Start Whiteboard</button>
+            <button class="btn-cancel" onclick="closeModal('whiteboardModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- LESSON MODAL -->
+<div id="lessonModal" class="modal">
+    <div class="modal-content">
+        <h2>📖 Create Lesson</h2>
+        <div class="form-group"><label>Class</label><select id="lessonClass"><option>Select Class</option></select></div>
+        <div class="form-group"><label>Subject</label><select id="lessonSubject"><option>Select Subject</option></select></div>
+        <div class="form-group"><label>Title</label><input type="text" id="lessonTitle" placeholder="Lesson title"></div>
+        <div class="form-group"><label>Lesson Type</label>
+            <select id="lessonType" onchange="toggleLessonFields()">
+                <option value="text">Text Only</option>
+                <option value="video">Video</option>
+                <option value="mixed">Mixed (Video + Text)</option>
+            </select>
+        </div>
+        <div id="videoField" style="display:none;">
+            <div class="form-group"><label>Video URL (YouTube/Vimeo)</label><input type="text" id="lessonVideo" placeholder="https://www.youtube.com/watch?v=..."></div>
+        </div>
+        <div class="form-group"><label>Content / Description</label><textarea id="lessonContent" placeholder="Write your lesson content here..."></textarea></div>
+        <div class="form-group"><label>📎 Upload Files</label>
+            <input type="file" id="lessonFiles" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.gif,.mp4,.webm,.zip,.rar">
+            <div class="help-text" style="font-size:12px;color:#999;margin-top:4px;">Max 10MB per file. Supported: PDF, Word, Excel, PowerPoint, Images, Videos, ZIP</div>
+        </div>
+        <div id="fileList" style="margin-top:10px;"></div>
+        <div class="modal-actions">
+            <button class="btn-save" onclick="saveLesson()">💾 Save Lesson</button>
+            <button class="btn-cancel" onclick="closeModal('lessonModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- ASSIGNMENT MODAL -->
+<div id="assignmentModal" class="modal">
+    <div class="modal-content">
+        <h2>📝 Create Assignment</h2>
+        <div class="form-group"><label>Class</label><select id="assignmentClass"><option>Select Class</option></select></div>
+        <div class="form-group"><label>Subject</label><select id="assignmentSubject"><option>Select Subject</option></select></div>
+        <div class="form-group"><label>Title</label><input type="text" id="assignmentTitle" placeholder="Assignment title"></div>
+        <div class="form-group"><label>Description</label><textarea id="assignmentDesc" placeholder="Describe the assignment..."></textarea></div>
+        <div class="form-group"><label>Due Date</label><input type="date" id="assignmentDue"></div>
+        <div class="form-group"><label>📎 Attachment URL</label><input type="text" id="assignmentAttachment" placeholder="https://example.com/file.pdf"></div>
+        <div class="form-group"><label>📎 Upload File</label><input type="file" id="assignmentFile" onchange="handleAssignmentFileUpload(event)"></div>
+        <div id="assignmentFileInfo" style="font-size:12px;color:#666;margin-top:5px;"></div>
+        <div class="modal-actions">
+            <button class="btn-save" onclick="saveAssignment()">💾 Save</button>
+            <button class="btn-cancel" onclick="closeModal('assignmentModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- QUIZ MODAL -->
+<div id="quizModal" class="modal">
+    <div class="modal-content">
+        <h2>🧪 Create Quiz</h2>
+        <div class="form-group"><label>Class</label><select id="quizClass"><option>Select Class</option></select></div>
+        <div class="form-group"><label>Subject</label><select id="quizSubject"><option>Select Subject</option></select></div>
+        <div class="form-group"><label>Title</label><input type="text" id="quizTitle" placeholder="Quiz title"></div>
+        <div class="form-group"><label>Questions (JSON)</label>
+            <textarea id="quizQuestions" rows="6" placeholder='[{"question":"What is 2+2?","type":"multiple_choice","options":["3","4","5","6"],"correct":"4"}]'></textarea>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-save" onclick="saveQuiz()">💾 Save</button>
+            <button class="btn-cancel" onclick="closeModal('quizModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- FORUM MODAL -->
+<div id="forumModal" class="modal">
+    <div class="modal-content">
+        <h2>💬 Create Forum</h2>
+        <div class="form-group"><label>Class</label><select id="forumClass"><option>Select Class</option></select></div>
+        <div class="form-group"><label>Title</label><input type="text" id="forumTitle" placeholder="Forum title"></div>
+        <div class="form-group"><label>Description</label><textarea id="forumDesc" placeholder="Describe the forum..."></textarea></div>
+        <div class="modal-actions">
+            <button class="btn-save" onclick="saveForum()">💾 Create</button>
+            <button class="btn-cancel" onclick="closeModal('forumModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// =============================================
+// SUPABASE CONFIG
+// =============================================
+var SUPABASE_URL = 'https://nivmrwbusbeppdssmfpj.supabase.co';
+var SUPABASE_ANON_KEY = 'sb_publishable_kwF_yAmJ5AWnbaIe57snrw_fXng7-6a';
+var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+var teacherId = null;
+var activeTab = 'dashboard';
+var uploadedFiles = [];
+
+// =============================================
+// TOGGLE SIDEBAR
+// =============================================
+function toggleSidebar() {
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('overlay');
+    if (sidebar) {
+        sidebar.classList.toggle('open');
+        if (overlay) overlay.classList.toggle('active');
+    }
+}
+
+function closeSidebar() {
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('overlay');
+    if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('active');
+}
+
+// =============================================
+// ENSURE TEACHER RECORD EXISTS
+// =============================================
+async function ensureTeacherRecord(userId, email, fullName) {
+    var { data: existingTeacher, error: checkError } = await supabaseClient
+        .from('teachers')
+        .select('id')
+        .eq('auth_user_id', userId)
+        .maybeSingle();
+    
+    if (checkError) {
+        console.error('Error checking teacher:', checkError);
+        return null;
+    }
+    
+    if (existingTeacher) {
+        return existingTeacher.id;
+    }
+    
+    var teacherData = {
+        auth_user_id: userId,
+        full_name: fullName || 'Teacher',
+        email: email || 'teacher@mezaneyo.school',
+        is_active: true,
+        subject_specialty: null,
+        employee_id: null
+    };
+    
+    var { data: newTeacher, error: createError } = await supabaseClient
+        .from('teachers')
+        .insert([teacherData])
+        .select()
+        .single();
+    
+    if (createError) {
+        console.error('Error creating teacher:', createError);
+        return null;
+    }
+    
+    return newTeacher.id;
+}
+
+// =============================================
+// CHECK AUTH
+// =============================================
+async function checkAuth() {
+    var { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; return; }
+    var user = session.user;
+    var role = user.user_metadata?.role || 'student';
+    if (role !== 'teacher') {
+        window.location.href = role + '-dashboard.html';
+        return;
+    }
+    document.getElementById('teacherName').textContent = user.user_metadata?.full_name || user.email;
+    
+    teacherId = await ensureTeacherRecord(user.id, user.email, user.user_metadata?.full_name);
+    
+    if (!teacherId) {
+        showError('Could not find or create teacher record. Please contact admin.');
+        return;
+    }
+    
+    loadClassesAndSubjects();
+    loadDashboard();
+    loadWhiteboardSessions();
+}
+
+// =============================================
+// LOAD CLASSES & SUBJECTS
+// =============================================
+async function loadClassesAndSubjects() {
+    var { data: classes } = await supabaseClient.from('classes').select('*');
+    var { data: subjects } = await supabaseClient.from('subjects').select('*');
+    
+    ['liveClass', 'lessonClass', 'assignmentClass', 'quizClass', 'forumClass', 'wbClass'].forEach(function(id) {
+        var sel = document.getElementById(id);
+        if (sel && classes) {
+            sel.innerHTML = '<option value="">Select Class</option>' + 
+                classes.map(function(c) { return '<option value="' + c.id + '">' + c.class_name + '</option>'; }).join('');
+        }
+    });
+    
+    ['liveSubject', 'lessonSubject', 'assignmentSubject', 'quizSubject', 'wbSubject'].forEach(function(id) {
+        var sel = document.getElementById(id);
+        if (sel && subjects) {
+            sel.innerHTML = '<option value="">Select Subject</option>' + 
+                subjects.map(function(s) { return '<option value="' + s.id + '">' + s.name + '</option>'; }).join('');
+        }
+    });
+}
+
+// =============================================
+// SHOW TAB
+// =============================================
+function showTab(tab) {
+    activeTab = tab;
+    document.querySelectorAll('.sidebar nav ul li').forEach(function(el) { el.classList.remove('active'); });
+    var items = document.querySelectorAll('.sidebar nav ul li');
+    var tabs = ['dashboard','live','lessons','assignments','quizzes','qa','forums','students'];
+    var idx = tabs.indexOf(tab);
+    if (items[idx]) items[idx].classList.add('active');
+    
+    document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.remove('active'); });
+    var target = document.getElementById('tab-' + tab);
+    if (target) target.classList.add('active');
+    
+    var titles = {
+        dashboard: '📊 Dashboard',
+        live: '📹 Live Classes',
+        lessons: '📖 Lessons',
+        assignments: '📝 Assignments',
+        quizzes: '🧪 Quizzes',
+        qa: '❓ Q&A',
+        forums: '💬 Forums',
+        students: '👨‍🎓 Students'
+    };
+    document.getElementById('pageTitle').textContent = titles[tab] || 'Dashboard';
+    closeSidebar();
+    
+    if (tab === 'live') { loadLives(); loadWhiteboardSessions(); }
+    else if (tab === 'lessons') loadLessons();
+    else if (tab === 'assignments') loadAssignments();
+    else if (tab === 'quizzes') loadQuizzes();
+    else if (tab === 'qa') loadQA();
+    else if (tab === 'forums') loadForums();
+    else if (tab === 'students') loadStudents();
+}
+
+// =============================================
+// LOAD DASHBOARD
+// =============================================
+async function loadDashboard() {
+    try {
+        var { data: students } = await supabaseClient.from('students').select('*');
+        document.getElementById('totalStudents').textContent = students?.length || 0;
+        
+        var today = new Date().toISOString().split('T')[0];
+        var { data: attendance } = await supabaseClient.from('attendance').select('*').eq('date', today);
+        var present = 0;
+        if (attendance) {
+            for (var i = 0; i < attendance.length; i++) {
+                if (attendance[i].status === 'present') present++;
+            }
+        }
+        var total = attendance?.length || 1;
+        document.getElementById('todayAttendance').textContent = Math.round((present / total) * 100) + '%';
+        
+        var { data: assignments } = await supabaseClient.from('assignments').select('*').eq('teacher_id', teacherId);
+        document.getElementById('pendingAssignments').textContent = assignments?.length || 0;
+        
+        var { data: lives } = await supabaseClient.from('live_classes').select('*').eq('teacher_id', teacherId).eq('is_active', true);
+        document.getElementById('liveSessions').textContent = lives?.length || 0;
+    } catch (error) {
+        console.error('Dashboard error:', error);
+    }
+}
+
+// =============================================
+// LESSON FUNCTIONS
+// =============================================
+document.getElementById('lessonFiles')?.addEventListener('change', function(e) {
+    var fileList = document.getElementById('fileList');
+    uploadedFiles = [];
+    fileList.innerHTML = '';
+    
+    for (var i = 0; i < this.files.length; i++) {
+        var file = this.files[i];
+        if (file.size > 10 * 1024 * 1024) {
+            showError('File "' + file.name + '" is too large (max 10MB)');
+            continue;
+        }
+        uploadedFiles.push(file);
+        fileList.innerHTML += '<div style="background:#e9ecef;padding:4px 10px;border-radius:4px;margin:4px 0;font-size:13px;">📎 ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)</div>';
+    }
+});
+
+function toggleLessonFields() {
+    var type = document.getElementById('lessonType').value;
+    document.getElementById('videoField').style.display = (type === 'video' || type === 'mixed') ? 'block' : 'none';
+}
+
+async function saveLesson() {
+    var classId = document.getElementById('lessonClass').value;
+    var subjectId = document.getElementById('lessonSubject').value;
+    var title = document.getElementById('lessonTitle').value.trim();
+    var type = document.getElementById('lessonType').value;
+    var content = document.getElementById('lessonContent').value.trim();
+    var video = document.getElementById('lessonVideo').value.trim();
+    
+    if (!classId || !subjectId || !title) {
+        showError('Class, Subject, and Title are required');
+        return;
+    }
+    
+    var fileUrls = [];
+    for (var i = 0; i < uploadedFiles.length; i++) {
+        var file = uploadedFiles[i];
+        var reader = new FileReader();
+        var fileData = await new Promise(function(resolve) {
+            reader.onload = function(e) { resolve(e.target.result); };
+            reader.readAsDataURL(file);
+        });
+        fileUrls.push({
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            data: fileData
+        });
+    }
+    
+    var data = {
+        teacher_id: teacherId,
+        class_id: classId,
+        subject_id: subjectId,
+        title: title,
+        content: content || null,
+        lesson_type: type,
+        video_url: video || null,
+        attachments: fileUrls.length > 0 ? fileUrls : null,
+        is_published: true
+    };
+    
+    try {
+        var { error } = await supabaseClient.from('lessons').insert([data]);
+        if (error) throw error;
+        showSuccess('✅ Lesson created!');
+        closeModal('lessonModal');
+        uploadedFiles = [];
+        document.getElementById('fileList').innerHTML = '';
+        loadLessons();
+    } catch (error) {
+        showError(error.message);
+    }
+}
+
+async function loadLessons() {
+    if (!teacherId) { return; }
+    var { data, error } = await supabaseClient.from('lessons').select('*').eq('teacher_id', teacherId).order('created_at', { ascending: false });
+    if (error) return showError(error.message);
+    
+    var container = document.getElementById('lessonList');
+    if (data && data.length > 0) {
+        var html = '';
+        for (var i = 0; i < data.length; i++) {
+            var l = data[i];
+            html += '<div class="lesson-card"><h4>' + l.title + '</h4>';
+            html += '<div class="meta">' + (l.lesson_type || 'text') + ' • Class: ' + (l.class_id || 'N/A') + '</div>';
+            if (l.content) html += '<div style="margin-top:5px; color:#444;">' + l.content.substring(0, 150) + '</div>';
+            if (l.video_url) html += '<div style="margin-top:5px;">🎥 <a href="' + l.video_url + '" target="_blank">Watch Video</a></div>';
+            
+            if (l.attachments) {
+                var attachments = typeof l.attachments === 'string' ? JSON.parse(l.attachments) : l.attachments;
+                if (attachments && attachments.length > 0) {
+                    html += '<div style="margin-top:5px;">📎 Files: ';
+                    for (var j = 0; j < attachments.length; j++) {
+                        var file = attachments[j];
+                        var fileName = file.name || 'file-' + (j+1);
+                        html += '<span class="material-link">📄 ' + fileName + '</span> ';
+                    }
+                    html += '</div>';
+                }
+            }
+            
+            html += '<div style="margin-top:8px;"><button class="btn btn-danger btn-sm" onclick="deleteLesson(\'' + l.id + '\')">Delete</button></div></div>';
+        }
+        container.innerHTML = html;
+    } else {
+        container.innerHTML = '<p style="color:#999;">No lessons created yet.</p>';
+    }
+}
+
+async function deleteLesson(id) {
+    if (!confirm('Delete this lesson?')) return;
+    var { error } = await supabaseClient.from('lessons').delete().eq('id', id);
+    if (error) return showError(error.message);
+    showSuccess('Lesson deleted');
+    loadLessons();
+}
+
+// =============================================
+// LIVE CLASSES
+// =============================================
+async function startLive() {
+    var classId = document.getElementById('liveClass').value;
+    var subjectId = document.getElementById('liveSubject').value;
+    var title = document.getElementById('liveTitle').value.trim();
+    var desc = document.getElementById('liveDesc').value.trim();
+    
+    if (!classId || !subjectId || !title) {
+        showError('Class, Subject, and Title are required');
+        return;
+    }
+    
+    var roomId = 'mezaneyo-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
+    
+    try {
+        var { error } = await supabaseClient.from('live_classes').insert([{
+            teacher_id: teacherId,
+            class_id: classId,
+            subject_id: subjectId,
+            title: title,
+            description: desc,
+            room_id: roomId,
+            scheduled_at: new Date().toISOString(),
+            is_active: true
+        }]);
+        if (error) throw error;
+        
+        showSuccess('✅ Live session started!');
+        closeModal('liveModal');
+        loadLives();
+        loadDashboard();
+        window.open('https://meet.jit.si/' + roomId + '?config.startWithAudioMuted=true&config.startWithVideoMuted=true', '_blank');
+    } catch (error) {
+        showError(error.message);
+    }
+}
+
+function joinLive(roomId) {
+    window.open('https://meet.jit.si/' + roomId + '?config.startWithAudioMuted=true&config.startWithVideoMuted=true', '_blank');
+}
+
+async function endLive(id) {
+    if (!confirm('End this live session?')) return;
+    var { error } = await supabaseClient.from('live_classes').update({ is_active: false }).eq('id', id);
+    if (error) return showError(error.message);
+    showSuccess('Live session ended');
+    loadLives();
+    loadDashboard();
+}
+
+async function loadLives() {
+    if (!teacherId) { return; }
+    var { data, error } = await supabaseClient.from('live_classes').select('*').eq('teacher_id', teacherId).order('created_at', { ascending: false });
+    if (error) return showError(error.message);
+    
+    var container = document.getElementById('liveList');
+    if (data && data.length > 0) {
+        var html = '';
+        for (var i = 0; i < data.length; i++) {
+            var l = data[i];
+            html += '<div style="padding:12px; border:1px solid #eee; border-radius:8px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">';
+            html += '<div><strong>' + l.title + '</strong> ' + (l.is_active ? '<span class="live-badge">🔴 LIVE</span>' : '<span style="color:#999;">Ended</span>');
+            html += '<div style="color:#666; font-size:12px;">' + new Date(l.scheduled_at).toLocaleString() + '</div></div>';
+            if (l.is_active) {
+                html += '<div><button class="btn btn-sm" onclick="joinLive(\'' + l.room_id + '\')">Join</button>';
+                html += '<button class="btn btn-danger btn-sm" onclick="endLive(\'' + l.id + '\')">End</button></div>';
+            }
+            html += '</div>';
+        }
+        container.innerHTML = html;
+    } else {
+        container.innerHTML = '<p style="color:#999;">No live sessions created yet.</p>';
+    }
+}
+
+// =============================================
+// WHITEBOARD FUNCTIONS
+// =============================================
+async function startWhiteboard() {
+    var classId = document.getElementById('wbClass').value;
+    var subjectId = document.getElementById('wbSubject').value;
+    var title = document.getElementById('wbTitle').value.trim() || 'Whiteboard Session';
+    var desc = document.getElementById('wbDesc').value.trim() || 'Interactive whiteboard session';
+    
+    if (!classId || !subjectId) {
+        showError('Please select a class and subject first');
+        return;
+    }
+    
+    var sessionCode = 'wb-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
+    
+    try {
+        var { data: session, error } = await supabaseClient
+            .from('interactive_sessions')
+            .insert([{
+                teacher_id: teacherId,
+                class_id: classId,
+                subject_id: subjectId,
+                session_name: title,
+                session_code: sessionCode,
+                is_active: true,
+                started_at: new Date().toISOString()
+            }])
+            .select()
+            .single();
+        
+        if (error) throw error;
+        
+        showSuccess('🖊️ Whiteboard session started!');
+        closeModal('whiteboardModal');
+        
+        var { data: teacher } = await supabaseClient
+            .from('teachers')
+            .select('full_name')
+            .eq('id', teacherId)
+            .single();
+        
+        var teacherName = teacher?.full_name || 'Teacher';
+        
+        var url = 'whiteboard.html?room=' + sessionCode + '&session=' + session.id + '&role=teacher&name=' + encodeURIComponent(teacherName);
+        window.open(url, '_blank', 'width=1200,height=800');
+        
+        loadWhiteboardSessions();
+        
+    } catch (error) {
+        showError('Error starting whiteboard: ' + error.message);
+    }
+}
+
+async function loadWhiteboardSessions() {
+    if (!teacherId) return;
+    
+    var { data, error } = await supabaseClient
+        .from('interactive_sessions')
+        .select('*')
+        .eq('teacher_id', teacherId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+    
+    if (error) {
+        console.error('Error loading whiteboard sessions:', error);
+        return;
+    }
+    
+    var container = document.getElementById('whiteboardList');
+    if (!container) return;
+    
+    if (data && data.length > 0) {
+        var html = '';
+        for (var i = 0; i < data.length; i++) {
+            var s = data[i];
+            html += `
+                <div style="padding:10px;border:1px solid #eee;border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                    <div>
+                        <strong>🖊️ ${s.session_name}</strong>
+                        <div style="color:#666;font-size:12px;">Code: ${s.session_code} • Started: ${new Date(s.started_at).toLocaleTimeString()}</div>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-primary" onclick="joinWhiteboard('${s.session_code}','${s.id}','teacher')">🖊️ Join</button>
+                        <button class="btn btn-danger btn-sm" onclick="endWhiteboard('${s.id}')">End</button>
+                    </div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    } else {
+        container.innerHTML = '<p style="color:#999;">No active whiteboard sessions</p>';
+    }
+}
+
+function joinWhiteboard(sessionCode, sessionId, role) {
+    var teacherName = document.getElementById('teacherName').textContent || 'Teacher';
+    var url = 'whiteboard.html?room=' + sessionCode + '&session=' + sessionId + '&role=' + role + '&name=' + encodeURIComponent(teacherName);
+    window.open(url, '_blank', 'width=1200,height=800');
+}
+
+async function endWhiteboard(sessionId) {
+    if (!confirm('End this whiteboard session?')) return;
+    
+    var { error } = await supabaseClient
+        .from('interactive_sessions')
+        .update({ 
+            is_active: false, 
+            ended_at: new Date().toISOString() 
+        })
+        .eq('id', sessionId);
+    
+    if (error) {
+        showError('Error ending session: ' + error.message);
+        return;
+    }
+    
+    showSuccess('Whiteboard session ended');
+    loadWhiteboardSessions();
+}
+// =============================================
+// LOAD RECORDED WHITEBOARDS
+// =============================================
+async function loadRecordedWhiteboards() {
+    if (!teacherId) return;
+    
+    var { data, error } = await supabaseClient
+        .from('recorded_whiteboards')
+        .select('*')
+        .order('recorded_at', { ascending: false })
+        .limit(10);
+    
+    if (error) {
+        console.error('Error loading recordings:', error);
+        return;
+    }
+    
+    var container = document.getElementById('recordingsList');
+    if (!container) return;
+    
+    if (data && data.length > 0) {
+        var html = '';
+        for (var i = 0; i < data.length; i++) {
+            var r = data[i];
+            var date = new Date(r.recorded_at).toLocaleDateString();
+            var time = new Date(r.recorded_at).toLocaleTimeString();
+            html += `
+                <div style="padding:10px;border:1px solid #eee;border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                    <div>
+                        <strong>📹 Recording</strong>
+                        <div style="color:#666;font-size:12px;">Room: ${r.room_id} • ${date} at ${time}</div>
+                        ${r.image_url ? `<img src="${r.image_url}" style="max-width:100px;max-height:50px;border-radius:4px;margin-top:4px;">` : ''}
+                    </div>
+                    <div>
+                        ${r.image_url ? `<button class="btn btn-sm btn-primary" onclick="viewRecording('${r.image_url}')">👁️ View</button>` : ''}
+                        <button class="btn btn-sm btn-danger" onclick="deleteRecording('${r.id}')">🗑️</button>
+                    </div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    } else {
+        container.innerHTML = '<p style="color:#999;">No recordings saved yet.</p>';
+    }
+}
+
+function viewRecording(imageUrl) {
+    window.open(imageUrl, '_blank');
+}
+
+async function deleteRecording(id) {
+    if (!confirm('Delete this recording?')) return;
+    var { error } = await supabaseClient
+        .from('recorded_whiteboards')
+        .delete()
+        .eq('id', id);
+    if (error) {
+        showError('Error deleting recording: ' + error.message);
+        return;
+    }
+    showSuccess('Recording deleted');
+    loadRecordedWhiteboards();
+}
+
+
+// =============================================
+// ASSIGNMENT FUNCTIONS
+// =============================================
+async function saveAssignment() {
+    var classId = document.getElementById('assignmentClass').value;
+    var subjectId = document.getElementById('assignmentSubject').value;
+    var title = document.getElementById('assignmentTitle').value.trim();
+    var desc = document.getElementById('assignmentDesc').value.trim();
+    var dueDate = document.getElementById('assignmentDue').value;
+    var attachment = document.getElementById('assignmentAttachment').value.trim();
+    var fileInput = document.getElementById('assignmentFile');
+    
+    if (!classId || !subjectId || !title || !dueDate) {
+        showError('All fields are required');
+        return;
+    }
+    
+    var attachmentUrl = attachment || null;
+    
+    if (fileInput && fileInput.files && fileInput.files.length > 0) {
+        var file = fileInput.files[0];
+        if (file.size > 10 * 1024 * 1024) {
+            showError('File too large (max 10MB)');
+            return;
+        }
+        var reader = new FileReader();
+        var fileData = await new Promise(function(resolve) {
+            reader.onload = function(e) { resolve(e.target.result); };
+            reader.readAsDataURL(file);
+        });
+        attachmentUrl = fileData;
+    }
+    
+    try {
+        var { error } = await supabaseClient.from('assignments').insert([{
+            teacher_id: teacherId,
+            class_id: classId,
+            subject_id: subjectId,
+            title: title,
+            description: desc || null,
+            due_date: dueDate,
+            attachment_url: attachmentUrl
+        }]);
+        if (error) throw error;
+        showSuccess('✅ Assignment created!');
+        closeModal('assignmentModal');
+        loadAssignments();
+        loadDashboard();
+    } catch (error) {
+        showError(error.message);
+    }
+}
+
+function handleAssignmentFileUpload(event) {
+    var file = event.target.files[0];
+    if (file) {
+        document.getElementById('assignmentFileInfo').textContent = '📎 Selected: ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+        document.getElementById('assignmentAttachment').value = '';
+    }
+}
+
+async function loadAssignments() {
+    if (!teacherId) { return; }
+    var { data, error } = await supabaseClient.from('assignments').select('*').eq('teacher_id', teacherId).order('created_at', { ascending: false });
+    if (error) return showError(error.message);
+    
+    var container = document.getElementById('assignmentList');
+    if (data && data.length > 0) {
+        var html = '';
+        for (var i = 0; i < data.length; i++) {
+            var a = data[i];
+            html += '<div class="lesson-card"><h4>' + a.title + '</h4>';
+            html += '<div class="meta">📅 Due: ' + new Date(a.due_date).toLocaleDateString() + ' • Class: ' + (a.class_id || 'N/A') + '</div>';
+            if (a.description) html += '<div style="margin-top:5px; color:#444;">' + a.description + '</div>';
+            if (a.attachment_url) {
+                var isBase64 = a.attachment_url.startsWith('data:');
+                if (isBase64) {
+                    html += '<div style="margin-top:5px;">📎 <a href="' + a.attachment_url + '" download target="_blank">Download Attachment</a></div>';
+                } else {
+                    html += '<div style="margin-top:5px;">📎 <a href="' + a.attachment_url + '" target="_blank">Open Attachment</a></div>';
+                }
+            }
+            html += '<div style="margin-top:8px;"><button class="btn btn-danger btn-sm" onclick="deleteAssignment(\'' + a.id + '\')">Delete</button></div></div>';
+        }
+        container.innerHTML = html;
+    } else {
+        container.innerHTML = '<p style="color:#999;">No assignments created yet.</p>';
+    }
+}
+
+async function deleteAssignment(id) {
+    if (!confirm('Delete this assignment?')) return;
+    var { error } = await supabaseClient.from('assignments').delete().eq('id', id);
+    if (error) return showError(error.message);
+    showSuccess('Assignment deleted');
+    loadAssignments();
+    loadDashboard();
+}
+
+// =============================================
+// QUIZ FUNCTIONS
+// =============================================
+async function saveQuiz() {
+    var classId = document.getElementById('quizClass').value;
+    var subjectId = document.getElementById('quizSubject').value;
+    var title = document.getElementById('quizTitle').value.trim();
+    var questionsJson = document.getElementById('quizQuestions').value.trim();
+    
+    if (!classId || !subjectId || !title) {
+        showError('Class, Subject, and Title are required');
+        return;
+    }
+    
+    var questions = [];
+    try {
+        questions = JSON.parse(questionsJson);
+    } catch (e) {
+        showError('Invalid questions JSON format');
+        return;
+    }
+    
+    try {
+        var { data: quiz, error: quizError } = await supabaseClient.from('quizzes').insert([{
+            teacher_id: teacherId,
+            class_id: classId,
+            subject_id: subjectId,
+            title: title,
+            is_published: true
+        }]).select().single();
+        if (quizError) throw quizError;
+        
+        for (var i = 0; i < questions.length; i++) {
+            var q = questions[i];
+            var { error: qError } = await supabaseClient.from('quiz_questions').insert([{
+                quiz_id: quiz.id,
+                question: q.question,
+                question_type: q.type || 'multiple_choice',
+                options: q.options || null,
+                correct_answer: q.correct,
+                points: q.points || 1
+            }]);
+            if (qError) throw qError;
+        }
+        
+        showSuccess('✅ Quiz created with ' + questions.length + ' questions!');
+        closeModal('quizModal');
+        loadQuizzes();
+    } catch (error) {
+        showError(error.message);
+    }
+}
+
+async function loadQuizzes() {
+    if (!teacherId) { return; }
+    var { data, error } = await supabaseClient.from('quizzes').select('*').eq('teacher_id', teacherId).order('created_at', { ascending: false });
+    if (error) return showError(error.message);
+    
+    var container = document.getElementById('quizList');
+    if (data && data.length > 0) {
+        var html = '';
+        for (var i = 0; i < data.length; i++) {
+            var q = data[i];
+            html += '<div class="lesson-card"><h4>' + q.title + '</h4>';
+            html += '<div class="meta">Class: ' + (q.class_id || 'N/A') + ' • Subject: ' + (q.subject_id || 'N/A') + '</div>';
+            html += '<div style="margin-top:8px;"><button class="btn btn-danger btn-sm" onclick="deleteQuiz(\'' + q.id + '\')">Delete</button></div></div>';
+        }
+        container.innerHTML = html;
+    } else {
+        container.innerHTML = '<p style="color:#999;">No quizzes created yet.</p>';
+    }
+}
+
+async function deleteQuiz(id) {
+    if (!confirm('Delete this quiz?')) return;
+    await supabaseClient.from('quiz_questions').delete().eq('quiz_id', id);
+    var { error } = await supabaseClient.from('quizzes').delete().eq('id', id);
+    if (error) return showError(error.message);
+    showSuccess('Quiz deleted');
+    loadQuizzes();
+}
+
+// =============================================
+// Q&A FUNCTIONS
+// =============================================
+async function loadQA() {
+    if (!teacherId) { return; }
+    var { data, error } = await supabaseClient.from('questions').select('*').order('created_at', { ascending: false });
+    if (error) return showError(error.message);
+    
+    var container = document.getElementById('qaList');
+    if (data && data.length > 0) {
+        var html = '';
+        for (var i = 0; i < data.length; i++) {
+            var q = data[i];
+            html += '<div class="question-item"><div class="q">❓ ' + q.question + '</div>';
+            html += '<div style="font-size:12px; color:#666;">Student ID: ' + q.student_id + ' • ' + new Date(q.created_at).toLocaleDateString() + '</div>';
+            if (q.is_answered) {
+                html += '<div class="a">✅ Answered</div>';
+            } else {
+                html += '<div style="margin-top:8px;"><input type="text" id="answer-' + q.id + '" placeholder="Type your answer..." style="width:60%; padding:6px; border:1px solid #ddd; border-radius:4px;">';
+                html += '<button class="btn btn-sm" onclick="answerQuestion(\'' + q.id + '\')">Reply</button></div>';
+            }
+            html += '</div>';
+        }
+        container.innerHTML = html;
+    } else {
+        container.innerHTML = '<p style="color:#999;">No questions from students yet.</p>';
+    }
+}
+
+async function answerQuestion(questionId) {
+    var answer = document.getElementById('answer-' + questionId).value.trim();
+    if (!answer) return showError('Please type an answer');
+    
+    try {
+        var { error } = await supabaseClient.from('answers').insert([{
+            question_id: questionId,
+            teacher_id: teacherId,
+            answer: answer
+        }]);
+        if (error) throw error;
+        await supabaseClient.from('questions').update({ is_answered: true }).eq('id', questionId);
+        showSuccess('✅ Answer posted!');
+        loadQA();
+    } catch (error) {
+        showError(error.message);
+    }
+}
+
+// =============================================
+// FORUM FUNCTIONS
+// =============================================
+async function saveForum() {
+    var classId = document.getElementById('forumClass').value;
+    var title = document.getElementById('forumTitle').value.trim();
+    var desc = document.getElementById('forumDesc').value.trim();
+    
+    if (!classId || !title) {
+        showError('Class and Title are required');
+        return;
+    }
+    
+    try {
+        var { error } = await supabaseClient.from('forums').insert([{
+            class_id: classId,
+            teacher_id: teacherId,
+            title: title,
+            description: desc || null,
+            is_active: true
+        }]);
+        if (error) throw error;
+        showSuccess('✅ Forum created!');
+        closeModal('forumModal');
+        loadForums();
+    } catch (error) {
+        showError(error.message);
+    }
+}
+
+async function loadForums() {
+    if (!teacherId) { return; }
+    var { data, error } = await supabaseClient.from('forums').select('*').eq('teacher_id', teacherId).order('created_at', { ascending: false });
+    if (error) return showError(error.message);
+    
+    var container = document.getElementById('forumList');
+    if (data && data.length > 0) {
+        var html = '';
+        for (var i = 0; i < data.length; i++) {
+            var f = data[i];
+            html += '<div class="forum-post"><div class="author">💬 ' + f.title + '</div>';
+            html += '<div class="date">' + (f.description || '') + ' • ' + new Date(f.created_at).toLocaleDateString() + '</div>';
+            html += '<div style="margin-top:8px;"><button class="btn btn-danger btn-sm" onclick="deleteForum(\'' + f.id + '\')">Delete</button></div></div>';
+        }
+        container.innerHTML = html;
+    } else {
+        container.innerHTML = '<p style="color:#999;">No forums created yet.</p>';
+    }
+}
+
+async function deleteForum(id) {
+    if (!confirm('Delete this forum?')) return;
+    var { error } = await supabaseClient.from('forums').delete().eq('id', id);
+    if (error) return showError(error.message);
+    showSuccess('Forum deleted');
+    loadForums();
+}
+
+// =============================================
+// STUDENTS
+// =============================================
+async function loadStudents() {
+    var { data, error } = await supabaseClient.from('students').select('*').order('created_at', { ascending: false });
+    if (error) return showError(error.message);
+    
+    var container = document.getElementById('studentTable');
+    if (data && data.length > 0) {
+        var html = '<table><thead><tr><th>Name</th><th>ID</th><th>Form</th><th>Guardian</th></tr></thead><tbody>';
+        for (var i = 0; i < data.length; i++) {
+            var s = data[i];
+            html += '<tr><td>' + s.full_name + '</td><td>' + (s.student_id_number || '-') + '</td>';
+            html += '<td>' + (s.class_id || '-') + '</td><td>' + (s.guardian_name || '-') + '</td></tr>';
+        }
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    } else {
+        container.innerHTML = '<p style="color:#999;padding:20px;text-align:center;">No students found.</p>';
+    }
+}
+
+// =============================================
+// MODAL HELPERS
+// =============================================
+function openModal(id) {
+    document.getElementById(id).classList.add('active');
+    if (id === 'lessonModal') {
+        document.getElementById('lessonVideo').value = '';
+        document.getElementById('videoField').style.display = 'none';
+        document.getElementById('fileList').innerHTML = '';
+        uploadedFiles = [];
+    }
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+}
+
+// =============================================
+// MESSAGES
+// =============================================
+function showSuccess(msg) {
+    var el = document.getElementById('successMsg');
+    el.textContent = '✅ ' + msg;
+    el.style.display = 'block';
+    document.getElementById('errorMsg').style.display = 'none';
+    setTimeout(function() { el.style.display = 'none'; }, 4000);
+}
+
+function showError(msg) {
+    var el = document.getElementById('errorMsg');
+    document.getElementById('errorText').textContent = msg;
+    el.style.display = 'block';
+    document.getElementById('successMsg').style.display = 'none';
+}
+
+// =============================================
+// LOGOUT
+// =============================================
+async function logout() {
+    await supabaseClient.auth.signOut();
+    window.location.href = 'index.html';
+}
+
+// =============================================
+// INIT
+// =============================================
+window.onload = checkAuth;
+
+document.querySelectorAll('.modal').forEach(function(modal) {
+    modal.addEventListener('click', function(e) {
+        if (e.target === this) this.classList.remove('active');
+    });
+});
+
+document.addEventListener('click', function(e) {
+    var sidebar = document.getElementById('sidebar');
+    var toggleBtn = document.getElementById('menuToggle');
+    if (window.innerWidth <= 768) {
+        if (sidebar && sidebar.classList.contains('open')) {
+            var isClickInside = sidebar.contains(e.target) || (toggleBtn && toggleBtn.contains(e.target));
+            if (!isClickInside) {
+                closeSidebar();
+            }
+        }
+    }
+});
+</script>
+</body>
+</html>

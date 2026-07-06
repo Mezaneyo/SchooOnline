@@ -3,216 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email Confirmation - MEZANEYO School</title>
+    <title>Email Confirmation - MEZANEYO</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        .confirm-container {
-            max-width: 500px;
-            margin: 80px auto;
-            background: white;
-            padding: 50px 40px;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        .confirm-container .icon {
-            font-size: 80px;
-            margin-bottom: 20px;
-        }
-        .confirm-container h2 {
-            color: #1a2a3a;
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
-        .confirm-container p {
-            color: #666;
-            font-size: 16px;
-            line-height: 1.6;
-            margin-bottom: 8px;
-        }
-        .confirm-container .status-box {
+        body {
+            font-family: 'Poppins', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #f0f4f8;
+            margin: 0;
             padding: 20px;
-            border-radius: 12px;
-            margin: 25px 0;
-            display: none;
         }
-        .confirm-container .status-box.success {
-            display: block;
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
-        .confirm-container .status-box.error {
-            display: block;
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .confirm-container .status-box.loading {
-            display: block;
-            background: #cce5ff;
-            color: #004085;
-            border: 1px solid #b8daff;
-        }
-        .confirm-container .btn {
+        .icon { font-size: 60px; margin-bottom: 10px; }
+        h2 { color: #1a2a3a; margin-bottom: 10px; }
+        p { color: #666; line-height: 1.6; }
+        .btn {
             display: inline-block;
-            padding: 14px 32px;
+            padding: 12px 30px;
             background: #2d6a4f;
             color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
             text-decoration: none;
-            transition: background 0.3s;
-            margin-top: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
         }
-        .confirm-container .btn:hover {
-            background: #1b4332;
-        }
+        .btn:hover { background: #1b4332; }
+        .success { color: #155724; background: #d4edda; padding: 15px; border-radius: 8px; }
+        .error { color: #721c24; background: #f8d7da; padding: 15px; border-radius: 8px; }
+        .loading { color: #004085; background: #cce5ff; padding: 15px; border-radius: 8px; }
         .spinner {
-            display: inline-block;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #2d6a4f;
+            border-radius: 50%;
             width: 30px;
             height: 30px;
-            border: 4px solid rgba(0,0,0,0.1);
-            border-radius: 50%;
-            border-top-color: #2d6a4f;
-            animation: spin 0.8s ease-in-out infinite;
+            animation: spin 1s linear infinite;
             margin: 10px auto;
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
-    <!-- Navbar -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="logo">
-                <img src="logo.png" alt="MEZANEYO Logo" onerror="this.src='https://via.placeholder.com/40x40?text=M'">
-                <span>MEZANEYO</span>
-            </div>
-            <ul class="nav-links">
-                <li><a href="index.html">Home</a></li>
-                <li><a href="courses.html">Courses</a></li>
-                <li><a href="login.html">Login</a></li>
-                <li><a href="signup.html">Sign Up</a></li>
-            </ul>
-            <div class="mobile-menu">☰</div>
-        </div>
-    </nav>
-
-    <div class="confirm-container">
+    <div class="container">
         <div class="icon">✉️</div>
         <h2>Email Confirmation</h2>
-        <p>We're verifying your email address...</p>
-
-        <div id="statusBox" class="status-box loading">
-            <div class="spinner"></div>
-            <p style="margin-top:10px;">⏳ Verifying your email, please wait...</p>
+        <div id="status">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>⏳ Verifying your email...</p>
+            </div>
         </div>
-
-        <div id="resultMessage">
-            <p id="messageText"></p>
-        </div>
-
-        <a href="login.html" class="btn" id="loginBtn" style="display:none;">🔐 Go to Login</a>
+        <p id="message"></p>
+        <a href="login.html" class="btn hidden" id="loginBtn">🔐 Go to Login</a>
     </div>
 
     <script>
-        // =============================================
-        // SUPABASE CONFIGURATION
-        // =============================================
         const SUPABASE_URL = 'https://nivmrwbusbeppdssmfpj.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_kwF_yAmJ5AWnbaIe57snrw_fXng7-6a';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // =============================================
-        // HANDLE EMAIL CONFIRMATION
-        // =============================================
-        async function handleConfirmation() {
-            const statusBox = document.getElementById('statusBox');
-            const messageText = document.getElementById('messageText');
+        async function confirmEmail() {
+            const statusDiv = document.getElementById('status');
+            const messageDiv = document.getElementById('message');
             const loginBtn = document.getElementById('loginBtn');
 
             try {
-                // Get the access token from URL
-                const params = new URLSearchParams(window.location.search);
+                const hash = window.location.hash.substring(1);
+                const params = new URLSearchParams(hash);
                 const accessToken = params.get('access_token');
                 const refreshToken = params.get('refresh_token');
                 const type = params.get('type');
 
-                // Also check for hash fragment (Supabase sometimes uses this)
-                const hashParams = new URLSearchParams(window.location.hash.substring(1));
-                const hashAccessToken = hashParams.get('access_token');
-                const hashRefreshToken = hashParams.get('refresh_token');
+                // Also check URL query params
+                const urlParams = new URLSearchParams(window.location.search);
+                const urlAccessToken = urlParams.get('access_token');
+                const urlRefreshToken = urlParams.get('refresh_token');
 
-                // Use tokens from either URL or hash
-                const token = accessToken || hashAccessToken;
-                const refresh = refreshToken || hashRefreshToken;
+                const token = accessToken || urlAccessToken;
+                const refresh = refreshToken || urlRefreshToken;
 
                 if (!token) {
-                    // Check if already confirmed
+                    // Check if already logged in
                     const { data: { session } } = await supabaseClient.auth.getSession();
                     if (session) {
-                        // Already logged in
-                        statusBox.className = 'status-box success';
-                        statusBox.innerHTML = '<p>✅ Your email is already confirmed! You are logged in.</p>';
-                        messageText.textContent = 'Redirecting to dashboard...';
-                        loginBtn.style.display = 'inline-block';
+                        statusDiv.innerHTML = `<div class="success">✅ You are already logged in!</div>`;
+                        messageDiv.textContent = 'Redirecting to dashboard...';
+                        loginBtn.classList.remove('hidden');
                         loginBtn.textContent = '📊 Go to Dashboard';
                         loginBtn.href = 'admin-dashboard.html';
-                        
-                        setTimeout(() => {
-                            window.location.href = 'admin-dashboard.html';
-                        }, 2000);
+                        setTimeout(() => { window.location.href = 'admin-dashboard.html'; }, 2000);
                         return;
                     }
-
-                    // No token found
-                    statusBox.className = 'status-box error';
-                    statusBox.innerHTML = '<p>❌ Invalid or missing confirmation link.</p>';
-                    messageText.textContent = 'The confirmation link is invalid. Please try signing up again.';
-                    loginBtn.style.display = 'inline-block';
+                    statusDiv.innerHTML = `<div class="error">❌ Invalid confirmation link</div>`;
+                    messageDiv.textContent = 'The link is invalid or expired. Please try signing up again.';
+                    loginBtn.classList.remove('hidden');
                     return;
                 }
 
-                // Attempt to confirm the email
-                statusBox.className = 'status-box loading';
-                statusBox.innerHTML = '<div class="spinner"></div><p style="margin-top:10px;">⏳ Verifying your email, please wait...</p>';
+                // Set session with tokens
+                const { data, error } = await supabaseClient.auth.setSession({
+                    access_token: token,
+                    refresh_token: refresh || ''
+                });
 
-                // Try to set the session with the tokens
-                if (hashAccessToken && hashRefreshToken) {
-                    // Use hash tokens to set session
-                    const { data, error } = await supabaseClient.auth.setSession({
-                        access_token: hashAccessToken,
-                        refresh_token: hashRefreshToken
-                    });
+                if (error) throw error;
 
-                    if (error) throw error;
-                } else if (accessToken) {
-                    // Use URL token to verify
-                    const { data, error } = await supabaseClient.auth.verifyOtp({
-                        token_hash: accessToken,
-                        type: 'signup'
-                    });
-
-                    if (error) throw error;
-                }
-
-                // Success!
-                statusBox.className = 'status-box success';
-                statusBox.innerHTML = '<p>✅ Your email has been confirmed successfully!</p>';
-                messageText.textContent = '🎉 Welcome to MEZANEYO School! Your account is now active.';
-                loginBtn.style.display = 'inline-block';
+                statusDiv.innerHTML = `<div class="success">✅ Email confirmed successfully!</div>`;
+                messageDiv.textContent = '🎉 Your account is now active! You can now login.';
+                loginBtn.classList.remove('hidden');
                 loginBtn.textContent = '🔐 Login Now';
-                loginBtn.href = 'login.html';
 
-                // Auto-redirect to login after 3 seconds
                 setTimeout(() => {
                     window.location.href = 'login.html';
                 }, 3000);
@@ -220,46 +135,24 @@
             } catch (error) {
                 console.error('Confirmation error:', error);
                 
-                // Check if already verified
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (session) {
-                    statusBox.className = 'status-box success';
-                    statusBox.innerHTML = '<p>✅ Your email is already confirmed!</p>';
-                    messageText.textContent = 'You are already logged in. Redirecting to dashboard...';
-                    loginBtn.style.display = 'inline-block';
+                    statusDiv.innerHTML = `<div class="success">✅ Your email is already confirmed!</div>`;
+                    messageDiv.textContent = 'You are already logged in. Redirecting...';
+                    loginBtn.classList.remove('hidden');
                     loginBtn.textContent = '📊 Go to Dashboard';
                     loginBtn.href = 'admin-dashboard.html';
-                    
-                    setTimeout(() => {
-                        window.location.href = 'admin-dashboard.html';
-                    }, 2000);
+                    setTimeout(() => { window.location.href = 'admin-dashboard.html'; }, 2000);
                     return;
                 }
 
-                statusBox.className = 'status-box error';
-                statusBox.innerHTML = '<p>❌ Email confirmation failed.</p>';
-                
-                if (error.message.includes('already been confirmed')) {
-                    messageText.textContent = 'This email has already been confirmed. Please login.';
-                    loginBtn.style.display = 'inline-block';
-                    loginBtn.textContent = '🔐 Go to Login';
-                    loginBtn.href = 'login.html';
-                } else if (error.message.includes('expired')) {
-                    messageText.textContent = 'The confirmation link has expired. Please request a new one.';
-                    loginBtn.style.display = 'inline-block';
-                } else {
-                    messageText.textContent = error.message || 'Something went wrong. Please try again.';
-                    loginBtn.style.display = 'inline-block';
-                }
+                statusDiv.innerHTML = `<div class="error">❌ Confirmation failed</div>`;
+                messageDiv.textContent = error.message || 'Something went wrong. Please try again.';
+                loginBtn.classList.remove('hidden');
             }
         }
 
-        // =============================================
-        // RUN ON PAGE LOAD
-        // =============================================
-        window.onload = function() {
-            handleConfirmation();
-        };
+        window.onload = confirmEmail;
     </script>
 </body>
 </html>

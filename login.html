@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* Login-specific styles */
         .login-container {
             max-width: 420px;
             margin: 60px auto;
@@ -17,31 +16,11 @@
             border-radius: 16px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
-        .login-container .logo {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .login-container .logo h2 {
-            color: #1a2a3a;
-            font-size: 28px;
-        }
-        .login-container .logo p {
-            color: #666;
-            font-size: 14px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 6px;
-            color: #333;
-            font-size: 14px;
-        }
-        .form-group label .required {
-            color: #dc3545;
-        }
+        .login-container .logo { text-align: center; margin-bottom: 30px; }
+        .login-container .logo h2 { color: #1a2a3a; font-size: 28px; }
+        .login-container .logo p { color: #666; font-size: 14px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 14px; }
         .form-group input {
             width: 100%;
             padding: 12px 16px;
@@ -57,15 +36,8 @@
             border-color: #2d6a4f;
             box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.1);
         }
-        .form-group input.error {
-            border-color: #dc3545;
-        }
-        .form-group .error-text {
-            color: #dc3545;
-            font-size: 12px;
-            margin-top: 4px;
-            display: none;
-        }
+        .form-group input.error { border-color: #dc3545; }
+        .form-group .error-text { color: #dc3545; font-size: 12px; margin-top: 4px; display: none; }
         .form-options {
             display: flex;
             justify-content: space-between;
@@ -73,21 +45,9 @@
             margin-bottom: 20px;
             font-size: 14px;
         }
-        .form-options label {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            color: #666;
-            cursor: pointer;
-        }
-        .form-options a {
-            color: #2d6a4f;
-            text-decoration: none;
-            font-weight: 500;
-        }
-        .form-options a:hover {
-            text-decoration: underline;
-        }
+        .form-options label { display: flex; align-items: center; gap: 6px; color: #666; cursor: pointer; }
+        .form-options a { color: #2d6a4f; text-decoration: none; font-weight: 500; }
+        .form-options a:hover { text-decoration: underline; }
         .btn-login {
             width: 100%;
             padding: 14px;
@@ -100,27 +60,11 @@
             cursor: pointer;
             transition: background 0.3s;
         }
-        .btn-login:hover {
-            background: #1b4332;
-        }
-        .btn-login:disabled {
-            background: #999;
-            cursor: not-allowed;
-        }
-        .signup-link {
-            text-align: center;
-            margin-top: 20px;
-            color: #666;
-            font-size: 14px;
-        }
-        .signup-link a {
-            color: #2d6a4f;
-            font-weight: 600;
-            text-decoration: none;
-        }
-        .signup-link a:hover {
-            text-decoration: underline;
-        }
+        .btn-login:hover { background: #1b4332; }
+        .btn-login:disabled { background: #999; cursor: not-allowed; }
+        .signup-link { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
+        .signup-link a { color: #2d6a4f; font-weight: 600; text-decoration: none; }
+        .signup-link a:hover { text-decoration: underline; }
         .success-msg {
             background: #d4edda;
             color: #155724;
@@ -139,17 +83,6 @@
             display: none;
             border: 1px solid #f5c6cb;
         }
-        .role-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-left: 8px;
-        }
-        .role-badge.admin { background: #dc3545; color: white; }
-        .role-badge.teacher { background: #ffc107; color: #333; }
-        .role-badge.student { background: #17a2b8; color: white; }
         .spinner {
             display: inline-block;
             width: 20px;
@@ -161,19 +94,11 @@
             vertical-align: middle;
             margin-right: 8px;
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        @media (max-width: 600px) {
-            .login-container {
-                margin: 20px;
-                padding: 25px;
-            }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 600px) { .login-container { margin: 20px; padding: 25px; } }
     </style>
 </head>
 <body>
-    <!-- Navbar -->
     <nav class="navbar">
         <div class="nav-container">
             <div class="logo">
@@ -183,52 +108,39 @@
             <ul class="nav-links">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="courses.html">Courses</a></li>
-                <li><a href="portal.html">Student Portal</a></li>
                 <li><a href="signup.html">Sign Up</a></li>
             </ul>
             <div class="mobile-menu">☰</div>
         </div>
     </nav>
 
-    <!-- Login Form -->
     <div class="login-container">
         <div class="logo">
             <h2>🔐 Welcome Back</h2>
             <p>Sign in to your MEZANEYO account</p>
         </div>
 
-        <!-- Messages -->
-        <div id="successMsg" class="success-msg">
-            ✅ <span id="successText">Success!</span>
-        </div>
-        <div id="errorMsg" class="error-msg">
-            ❌ <span id="errorText">Error message</span>
-        </div>
+        <div id="successMsg" class="success-msg">✅ <span id="successText">Success!</span></div>
+        <div id="errorMsg" class="error-msg">❌ <span id="errorText">Error message</span></div>
 
         <form id="loginForm" onsubmit="return false;">
-            <!-- Email -->
             <div class="form-group">
                 <label>Email Address <span class="required">*</span></label>
                 <input type="email" id="email" placeholder="you@mezaneyo.school" required autofocus>
                 <div class="error-text" id="emailError">Please enter a valid email address</div>
             </div>
 
-            <!-- Password -->
             <div class="form-group">
                 <label>Password <span class="required">*</span></label>
                 <input type="password" id="password" placeholder="Enter your password" required>
                 <div class="error-text" id="passwordError">Please enter your password</div>
             </div>
 
-            <!-- Options -->
             <div class="form-options">
-                <label>
-                    <input type="checkbox" id="rememberMe"> Remember me
-                </label>
+                <label><input type="checkbox" id="rememberMe"> Remember me</label>
                 <a href="#">Forgot password?</a>
             </div>
 
-            <!-- Submit -->
             <button type="submit" class="btn-login" id="loginBtn" onclick="handleLogin()">
                 🔐 Sign In
             </button>
@@ -239,7 +151,6 @@
         </div>
     </div>
 
-    <!-- Footer -->
     <footer>
         <div class="footer-content">
             <div class="footer-section">
@@ -269,27 +180,23 @@
         // =============================================
         // SUPABASE CONFIGURATION
         // =============================================
-        const SUPABASE_URL = 'https://nivmrwbusbeppdssmfpj.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_kwF_yAmJ5AWnbaIe57snrw_fXng7-6a';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        var SUPABASE_URL = 'https://nivmrwbusbeppdssmfpj.supabase.co';
+        var SUPABASE_ANON_KEY = 'sb_publishable_kwF_yAmJ5AWnbaIe57snrw_fXng7-6a';
+        var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // =============================================
         // HANDLE LOGIN
         // =============================================
         async function handleLogin() {
-            // Get form values
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            const rememberMe = document.getElementById('rememberMe').checked;
+            var email = document.getElementById('email').value.trim();
+            var password = document.getElementById('password').value;
+            var rememberMe = document.getElementById('rememberMe').checked;
 
-            // Hide previous messages
             document.getElementById('successMsg').style.display = 'none';
             document.getElementById('errorMsg').style.display = 'none';
 
-            // --- VALIDATION ---
-            let hasError = false;
+            var hasError = false;
 
-            // Email
             if (!email || !email.includes('@')) {
                 document.getElementById('emailError').style.display = 'block';
                 document.getElementById('email').classList.add('error');
@@ -299,7 +206,6 @@
                 document.getElementById('email').classList.remove('error');
             }
 
-            // Password
             if (!password) {
                 document.getElementById('passwordError').style.display = 'block';
                 document.getElementById('password').classList.add('error');
@@ -314,82 +220,55 @@
                 return;
             }
 
-            // --- DISABLE BUTTON ---
-            const btn = document.getElementById('loginBtn');
+            var btn = document.getElementById('loginBtn');
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner"></span> Signing in...';
 
             try {
-                // Sign in with Supabase Auth
-                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                var { data, error } = await supabaseClient.auth.signInWithPassword({
                     email: email,
                     password: password
                 });
 
                 if (error) throw error;
 
-                // Get user role from metadata
-                const user = data.user;
-                const role = user?.user_metadata?.role || 'student';
-                const fullName = user?.user_metadata?.full_name || user?.email || 'User';
+                var user = data.user;
+                var role = user?.user_metadata?.role || 'student';
+                var fullName = user?.user_metadata?.full_name || user?.email || 'User';
 
-                // Show success message
-                showSuccess(`✅ Welcome back, ${fullName}! Redirecting to dashboard...`);
+                showSuccess('✅ Welcome back, ' + fullName + '! Redirecting...');
 
-                // Save session if remember me is checked
                 if (rememberMe) {
-                    // Supabase handles this automatically with session persistence
                     localStorage.setItem('mezaneyo_remember', 'true');
                 }
 
-                // Redirect based on role after 1.5 seconds
-                setTimeout(() => {
-                    switch(role) {
-                        case 'admin':
-                            window.location.href = 'admin-dashboard.html';
-                            break;
-                        case 'teacher':
-                            window.location.href = 'teacher-dashboard.html';
-                            break;
-                        case 'student':
-                            window.location.href = 'student-dashboard.html';
-                            break;
-                        default:
-                            window.location.href = 'dashboard.html';
-                    }
+                setTimeout(function() {
+                    if (role === 'admin') window.location.href = 'admin-dashboard.html';
+                    else if (role === 'teacher') window.location.href = 'teacher-dashboard.html';
+                    else window.location.href = 'student-dashboard.html';
                 }, 1500);
 
             } catch (error) {
                 console.error('Login error:', error);
-                
-                // Show specific error messages
-                let errorMessage = 'Invalid email or password. Please try again.';
-                if (error.message.includes('Email not confirmed')) {
-                    errorMessage = '⚠️ Please verify your email address before logging in. Check your inbox!';
-                } else if (error.message.includes('Invalid login credentials')) {
-                    errorMessage = '❌ Invalid email or password. Please try again.';
-                } else if (error.message.includes('rate limit')) {
-                    errorMessage = '⏳ Too many attempts. Please wait a moment and try again.';
+                var errorMessage = 'Invalid email or password. Please try again.';
+                if (error.message && error.message.includes('Email not confirmed')) {
+                    errorMessage = '⚠️ Please verify your email address before logging in.';
                 }
-                
                 showError(errorMessage);
                 btn.disabled = false;
                 btn.innerHTML = '🔐 Sign In';
             }
         }
 
-        // =============================================
-        // MESSAGES
-        // =============================================
         function showSuccess(message) {
-            const el = document.getElementById('successMsg');
+            var el = document.getElementById('successMsg');
             document.getElementById('successText').textContent = message;
             el.style.display = 'block';
             document.getElementById('errorMsg').style.display = 'none';
         }
 
         function showError(message) {
-            const el = document.getElementById('errorMsg');
+            var el = document.getElementById('errorMsg');
             document.getElementById('errorText').textContent = message;
             el.style.display = 'block';
             document.getElementById('successMsg').style.display = 'none';
@@ -399,8 +278,8 @@
         // REAL-TIME VALIDATION
         // =============================================
         document.getElementById('email').addEventListener('input', function() {
-            const email = this.value.trim();
-            const error = document.getElementById('emailError');
+            var email = this.value.trim();
+            var error = document.getElementById('emailError');
             if (email && !email.includes('@')) {
                 this.classList.add('error');
                 error.style.display = 'block';
@@ -411,8 +290,8 @@
         });
 
         document.getElementById('password').addEventListener('input', function() {
-            const password = this.value;
-            const error = document.getElementById('passwordError');
+            var password = this.value;
+            var error = document.getElementById('passwordError');
             if (password && password.length < 6) {
                 this.classList.add('error');
                 error.textContent = 'Password must be at least 6 characters';
@@ -428,11 +307,16 @@
         });
 
         // =============================================
-        // KEYBOARD SHORTCUTS
+        // MOBILE MENU
         // =============================================
+        document.querySelector('.mobile-menu')?.addEventListener('click', function() {
+            var links = document.querySelector('.nav-links');
+            if (links) links.classList.toggle('active');
+        });
+
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
-                const active = document.activeElement;
+                var active = document.activeElement;
                 if (active && active.closest('#loginForm')) {
                     handleLogin();
                 }
@@ -440,64 +324,32 @@
         });
 
         // =============================================
-        // MOBILE MENU TOGGLE
-        // =============================================
-        document.querySelector('.mobile-menu')?.addEventListener('click', function() {
-            document.querySelector('.nav-links').classList.toggle('active');
-        });
-
-        // =============================================
         // CHECK IF ALREADY LOGGED IN
         // =============================================
         window.onload = async function() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
+            var { data: { session } } = await supabaseClient.auth.getSession();
             
             if (session) {
-                // Already logged in - redirect to dashboard
-                const role = session.user?.user_metadata?.role || 'student';
+                var role = session.user?.user_metadata?.role || 'student';
                 window.location.href = role + '-dashboard.html';
                 return;
             }
 
-            // Pre-fill email from URL parameter (from signup redirect)
-            const params = new URLSearchParams(window.location.search);
-            const email = params.get('email');
+            var params = new URLSearchParams(window.location.search);
+            var email = params.get('email');
             if (email) {
                 document.getElementById('email').value = email;
-                // Focus on password field
                 document.getElementById('password').focus();
-                // Show a message
                 showSuccess('✅ Account created! Please login with your credentials.');
-                setTimeout(() => {
+                setTimeout(function() {
                     document.getElementById('successMsg').style.display = 'none';
                 }, 5000);
             }
 
-            // Check for remember me
             if (localStorage.getItem('mezaneyo_remember') === 'true') {
                 document.getElementById('rememberMe').checked = true;
             }
         };
-
-        // =============================================
-        // AUTO-LOGOUT IF INACTIVE (Optional)
-        // =============================================
-        // Uncomment below for auto-logout after 30 minutes
-        /*
-        let inactivityTimer;
-        function resetTimer() {
-            clearTimeout(inactivityTimer);
-            inactivityTimer = setTimeout(() => {
-                supabaseClient.auth.signOut();
-                window.location.href = 'login.html';
-            }, 30 * 60 * 1000); // 30 minutes
-        }
-        
-        document.addEventListener('click', resetTimer);
-        document.addEventListener('keydown', resetTimer);
-        document.addEventListener('scroll', resetTimer);
-        resetTimer();
-        */
     </script>
 </body>
 </html>

@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - MEZANEYO School</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background: #f0f4f8; }
+
+        .sidebar {
+            width: 260px;
+            height: 100vh;
+            background: #1a2a3a;
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding: 20px;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+        .sidebar .logo { font-size: 22px; font-weight: 700; padding: 10px 0 25px 0; border-bottom: 1px solid #2d4a5a; }
+        .sidebar .logo span { color: #4caf50; }
+        .sidebar nav ul { list-style: none; padding-top: 15px; }
+        .sidebar nav ul li {
+            padding: 10px 14px;
+            margin-bottom: 3px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        .sidebar nav ul li:hover, .sidebar nav ul li.active { background: #2d4a5a; }
+        .sidebar nav ul li .icon { margin-right: 10px; }
+        .sidebar nav ul li a { color: white; text-decoration: none; display: block; }
+
+        .main-content { margin-left: 260px; padding: 25px; min-height: 100vh; }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .header h1 { font-size: 22px; }
+        .header-right { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .btn-logout { background: #dc3545; color: white; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        .btn { background: #2d6a4f; color: white; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        .btn:hover { opacity: 0.85; }
+        .btn-danger { background: #dc3545; }
+        .btn-warning { background: #ffc107; color: #333; }
+        .btn-sm { padding: 4px 12px; font-size: 12px; }
+        .btn-primary { background: #007bff; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: white;
+            padding: 18px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .stat-card h3 { font-size: 28px; color: #1a2a3a; }
+        .stat-card p { color: #666; font-size: 13px; }
+        .stat-card .icon { font-size: 24px; }
+
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .section h2 { margin-bottom: 12px; font-size: 17px; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        table th, table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee; }
+        table th { background: #f8f9fa; font-weight: 600; }
+
+        .badge-present { background: #d4edda; color: #155724; padding: 3px 10px; border-radius: 20px; font-size: 11px; }
+        .badge-absent { background: #f8d7da; color: #721c24; padding: 3px 10px; border-radius: 20px; font-size: 11px; }
+        .badge-late { background: #fff3cd; color: #856404; padding: 3px 10px; border-radius: 20px; font-size: 11px; }
+
+        .grade-a { color: #28a745; font-weight: 700; }
+        .grade-b { color: #17a2b8; font-weight: 700; }
+        .grade-c { color: #ffc107; font-weight: 700; }
+        .grade-d { color: #fd7e14; font-weight: 700; }
+        .grade-f { color: #dc3545; font-weight: 700; }
+
+        .profile-card {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            flex-wrap: wrap;
+        }
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: #2d6a4f;
+            color: white;
+            font-size: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            border: 4px solid #2d6a4f;
+        }
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .profile-avatar .upload-btn {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            text-align: center;
+            padding: 4px 0;
+            font-size: 11px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .profile-avatar:hover .upload-btn { opacity: 1; }
+        .profile-avatar .upload-btn input { display: none; }
+
+        .profile-info h3 { font-size: 24px; }
+        .profile-info p { color: #666; }
+
+        .menu-toggle {
+            display: none;
+            background: #1a2a3a;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 22px;
+            cursor: pointer;
+            z-index: 1001;
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+        .overlay.active { display: block; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .success-msg, .error-msg { padding: 10px; border-radius: 6px; margin: 10px 0; display: none; font-size: 14px; }
+        .success-msg { background: #d4edda; color: #155724; }
+        .error-msg { background: #f8d7da; color: #721c24; }
+
+        .whiteboard-notice {
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); width: 280px; }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; padding: 15px; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .menu-toggle { display: inline-block; }
+            .sidebar:not(.open) { transform: translateX(-100%); }
+            .profile-card { flex-direction: column; text-align: center; }
+            .profile-avatar { width: 100px; height: 100px; }
+        }
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .header { flex-direction: column; align-items: flex-start; }
+            .header-right { width: 100%; justify-content: space-between; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<div class="sidebar" id="sidebar">
+    <div class="logo">🏫 MEZANEYO <span>School</span></div>
+    <nav>
+        <ul>
+            <li class="active" onclick="showTab('dashboard')"><span class="icon">📊</span> Dashboard</li>
+            <li onclick="showTab('profile')"><span class="icon">👤</span> My Profile</li>
+            <li onclick="showTab('subjects')"><span class="icon">📖</span> My Subjects</li>
+            <li onclick="showTab('attendance')"><span class="icon">📅</span> My Attendance</li>
+            <li onclick="showTab('grades')"><span class="icon">📈</span> My Grades</li>
+            <li><a href="index.html"><span class="icon">🏠</span> Back to Site</a></li>
+        </ul>
+    </nav>
+</div>
+
+<div class="main-content">
+    <div class="header">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">☰</button>
+            <h1 id="pageTitle">📊 Dashboard</h1>
+        </div>
+        <div class="header-right">
+            <span id="studentName" style="font-weight:500;"></span>
+            <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div id="successMsg" class="success-msg">✅ Success!</div>
+    <div id="errorMsg" class="error-msg">❌ <span id="errorText"></span></div>
+
+    <!-- DASHBOARD -->
+    <div id="tab-dashboard" class="tab-content active">
+        <div id="whiteboardStatus"></div>
+        <div class="stats-grid">
+            <div class="stat-card"><div class="icon">📅</div><h3 id="attendanceRate">0%</h3><p>Attendance Rate</p></div>
+            <div class="stat-card"><div class="icon">📈</div><h3 id="avgGrade">-</h3><p>Average Grade</p></div>
+            <div class="stat-card"><div class="icon">📖</div><h3 id="totalSubjects">0</h3><p>Subjects</p></div>
+            <div class="stat-card"><div class="icon">🏆</div><h3 id="bestGrade">-</h3><p>Best Grade</p></div>
+        </div>
+        <div class="section">
+            <h2>📋 Recent Activity</h2>
+            <div id="recentActivity"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div id="tab-profile" class="tab-content">
+        <div class="section">
+            <h2>👤 My Profile</h2>
+            <div id="profileContent"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- SUBJECTS -->
+    <div id="tab-subjects" class="tab-content">
+        <div class="section">
+            <h2>📖 My Subjects</h2>
+            <div id="subjectList"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- ATTENDANCE -->
+    <div id="tab-attendance" class="tab-content">
+        <div class="section">
+            <h2>📅 My Attendance</h2>
+            <div id="attendanceTable"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- GRADES -->
+    <div id="tab-grades" class="tab-content">
+        <div class="section">
+            <h2>📈 My Grades</h2>
+            <div id="gradesTable"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// =============================================
+// SUPABASE CONFIG
+// =============================================
+var SUPABASE_URL = 'https://nivmrwbusbeppdssmfpj.supabase.co';
+var SUPABASE_ANON_KEY = 'sb_publishable_kwF_yAmJ5AWnbaIe57snrw_fXng7-6a';
+var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+var studentId = null;
+var studentData = null;
+var activeTab = 'dashboard';
+
+// =============================================
+// TOGGLE SIDEBAR
+// =============================================
+function toggleSidebar() {
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('overlay');
+    if (sidebar) {
+        sidebar.classList.toggle('open');
+        if (overlay) overlay.classList.toggle('active');
+    }
+}
+
+function closeSidebar() {
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('overlay');
+    if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('active');
+}
+
+// =============================================
+// CHECK AUTH
+// =============================================
+async function checkAuth() {
+    var { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; return; }
+    var user = session.user;
+    var role = user.user_metadata?.role || 'student';
+    if (role !== 'student') {
+        window.location.href = role + '-dashboard.html';
+        return;
+    }
+    document.getElementById('studentName').textContent = user.user_metadata?.full_name || user.email;
+    
+    var { data: student, error } = await supabaseClient
+        .from('students')
+        .select('*')
+        .eq('auth_user_id', user.id)
+        .maybeSingle();
+    
+    if (error) {
+        console.error('Error fetching student:', error);
+        showError('Could not load student data');
+        return;
+    }
+    
+    if (student) {
+        studentData = student;
+        studentId = student.id;
+    } else {
+        showError('Student record not found. Please contact admin.');
+    }
+    
+    loadDashboard();
+    checkWhiteboardSessions();
+}
+
+// =============================================
+// SHOW TAB
+// =============================================
+function showTab(tab) {
+    activeTab = tab;
+    document.querySelectorAll('.sidebar nav ul li').forEach(function(el) { el.classList.remove('active'); });
+    var items = document.querySelectorAll('.sidebar nav ul li');
+    var tabs = ['dashboard','profile','subjects','attendance','grades'];
+    var idx = tabs.indexOf(tab);
+    if (items[idx]) items[idx].classList.add('active');
+    
+    document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.remove('active'); });
+    var target = document.getElementById('tab-' + tab);
+    if (target) target.classList.add('active');
+    
+    var titles = {
+        dashboard: '📊 Dashboard',
+        profile: '👤 My Profile',
+        subjects: '📖 My Subjects',
+        attendance: '📅 My Attendance',
+        grades: '📈 My Grades'
+    };
+    document.getElementById('pageTitle').textContent = titles[tab] || 'Dashboard';
+    
+    closeSidebar();
+    
+    if (tab === 'profile') loadProfile();
+    else if (tab === 'subjects') loadSubjects();
+    else if (tab === 'attendance') loadAttendance();
+    else if (tab === 'grades') loadGrades();
+}
+
+// =============================================
+// LOAD DASHBOARD
+// =============================================
+async function loadDashboard() {
+    if (!studentId) {
+        document.getElementById('recentActivity').innerHTML = '<p style="color:#999;">No student data found.</p>';
+        return;
+    }
+    
+    try {
+        var { data: attendance } = await supabaseClient
+            .from('attendance')
+            .select('*')
+            .eq('student_id', studentId);
+        
+        var total = attendance?.length || 1;
+        var present = 0;
+        if (attendance) {
+            for (var i = 0; i < attendance.length; i++) {
+                if (attendance[i].status === 'present') present++;
+            }
+        }
+        document.getElementById('attendanceRate').textContent = Math.round((present / total) * 100) + '%';
+        
+        var { data: grades } = await supabaseClient
+            .from('grades')
+            .select('*')
+            .eq('student_id', studentId);
+        
+        if (grades && grades.length > 0) {
+            var scores = grades.map(function(g) { return g.score || 0; });
+            var avg = scores.reduce(function(a, b) { return a + b; }, 0) / scores.length;
+            document.getElementById('avgGrade').textContent = avg.toFixed(1);
+            document.getElementById('totalSubjects').textContent = grades.length;
+            
+            var best = Math.max.apply(null, scores);
+            var bestGrade = best >= 80 ? 'A' : best >= 70 ? 'B' : best >= 60 ? 'C' : best >= 50 ? 'D' : 'F';
+            document.getElementById('bestGrade').textContent = bestGrade;
+        }
+        
+        var container = document.getElementById('recentActivity');
+        var recent = [];
+        if (attendance) {
+            for (var j = 0; j < attendance.length; j++) {
+                recent.push(attendance[j]);
+            }
+        }
+        if (grades) {
+            for (var k = 0; k < grades.length; k++) {
+                recent.push(grades[k]);
+            }
+        }
+        recent.sort(function(a, b) {
+            return new Date(b.created_at) - new Date(a.created_at);
+        });
+        recent = recent.slice(0, 5);
+        
+        if (recent.length > 0) {
+            var html = '';
+            for (var l = 0; l < recent.length; l++) {
+                var item = recent[l];
+                if (item.status) {
+                    html += '<div style="padding:8px; border-bottom:1px solid #eee;">📅 Attendance: <strong>' + item.status.toUpperCase() + '</strong> on ' + new Date(item.date).toLocaleDateString() + '</div>';
+                } else if (item.subject) {
+                    html += '<div style="padding:8px; border-bottom:1px solid #eee;">📈 ' + item.subject + ': <strong>' + (item.score || '-') + '%</strong> (' + (item.grade_letter || '-') + ')</div>';
+                }
+            }
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = '<p style="color:#999;">No recent activity.</p>';
+        }
+    } catch (error) {
+        console.error('Dashboard error:', error);
+        showError('Error loading dashboard');
+    }
+}
+
+// =============================================
+// CHECK FOR ACTIVE WHITEBOARD SESSIONS
+// =============================================
+async function checkWhiteboardSessions() {
+    if (!studentData || !studentData.class_id) return;
+    
+    try {
+        var { data, error } = await supabaseClient
+            .from('interactive_sessions')
+            .select('*, teachers(full_name)')
+            .eq('class_id', studentData.class_id)
+            .eq('is_active', true)
+            .order('created_at', { ascending: false })
+            .limit(1);
+        
+        if (error) {
+            console.error('Error checking whiteboard:', error);
+            return;
+        }
+        
+        var container = document.getElementById('whiteboardStatus');
+        if (!container) return;
+        
+        if (data && data.length > 0) {
+            var session = data[0];
+            var teacherName = session.teachers?.full_name || 'Teacher';
+            container.innerHTML = `
+                <div class="whiteboard-notice">
+                    <div>
+                        <span style="font-size:20px;">🖊️</span>
+                        <strong>${session.session_name}</strong>
+                        <div style="color:#666;font-size:13px;">👨‍🏫 ${teacherName} • Started: ${new Date(session.started_at).toLocaleTimeString()}</div>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="joinWhiteboard('${session.session_code}','${session.id}','student')">🖊️ Join Whiteboard</button>
+                </div>
+            `;
+        } else {
+            container.innerHTML = '';
+        }
+    } catch (error) {
+        console.error('Error checking whiteboard:', error);
+    }
+}
+
+// =============================================
+// JOIN WHITEBOARD (STUDENT)
+// =============================================
+function joinWhiteboard(sessionCode, sessionId, role) {
+    var studentName = document.getElementById('studentName').textContent || 'Student';
+    var url = 'whiteboard.html?room=' + sessionCode + '&session=' + sessionId + '&role=' + role + '&name=' + encodeURIComponent(studentName);
+    window.open(url, '_blank', 'width=1200,height=800');
+}
+
+// =============================================
+// VIEW RECORDED WHITEBOARDS (Student)
+// =============================================
+async function viewRecordings() {
+    var { data, error } = await supabaseClient
+        .from('recorded_whiteboards')
+        .select('*')
+        .order('recorded_at', { ascending: false });
+    
+    if (error) return;
+    
+    // Show recordings in a section
+    var container = document.getElementById('recordingsSection');
+    if (container && data && data.length > 0) {
+        container.innerHTML = data.map(r => `
+            <div style="padding:10px;border:1px solid #eee;border-radius:8px;margin-bottom:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                        <strong>📹 Recording</strong>
+                        <div style="color:#666;font-size:12px;">${new Date(r.recorded_at).toLocaleString()}</div>
+                    </div>
+                    ${r.image_url ? `<button class="btn btn-sm btn-primary" onclick="window.open('${r.image_url}','_blank')">👁️ View</button>` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+}
+
+// =============================================
+// LOAD PROFILE WITH PROFILE PICTURE
+// =============================================
+function loadProfile() {
+    var container = document.getElementById('profileContent');
+    if (studentData) {
+        var className = studentData.class_id || 'Not Assigned';
+        var optionalSubject = studentData.optional_subject_id || 'None';
+        var root = studentData.root_id || 'None';
+        var profilePic = studentData.profile_picture_url || '';
+        
+        container.innerHTML = `
+            <div class="profile-card">
+                <div class="profile-avatar" id="avatarContainer">
+                    ${profilePic ? `<img src="${profilePic}" alt="Profile Picture" id="profileImg">` : '<span style="font-size:48px;">👨‍🎓</span>'}
+                    <div class="upload-btn" onclick="document.getElementById('profileUpload').click()">
+                        📷 Upload
+                        <input type="file" id="profileUpload" accept="image/*" onchange="uploadProfilePicture(event)">
+                    </div>
+                </div>
+                <div class="profile-info">
+                    <h3>${studentData.full_name}</h3>
+                    <p>📖 <strong>Class:</strong> ${className}</p>
+                    <p>🆔 <strong>Student ID:</strong> ${studentData.student_id_number || 'No ID'}</p>
+                    <p>👨‍👩‍👧 <strong>Guardian:</strong> ${studentData.guardian_name || 'Not provided'}</p>
+                    <p>📞 <strong>Guardian Phone:</strong> ${studentData.guardian_phone || 'Not provided'}</p>
+                    <p>📧 <strong>Guardian Email:</strong> ${studentData.guardian_email || 'Not provided'}</p>
+                    <p>📅 <strong>Enrolled:</strong> ${studentData.enrollment_date ? new Date(studentData.enrollment_date).toLocaleDateString() : 'N/A'}</p>
+                    <p>📖 <strong>Optional Subject:</strong> ${optionalSubject}</p>
+                    <p>🔬 <strong>Root:</strong> ${root}</p>
+                </div>
+            </div>
+        `;
+    } else {
+        container.innerHTML = '<p style="color:#999;">Profile not found. Please contact admin.</p>';
+    }
+}
+
+// =============================================
+// UPLOAD PROFILE PICTURE
+// =============================================
+async function uploadProfilePicture(event) {
+    var file = event.target.files[0];
+    if (!file) return;
+    
+    if (file.size > 2 * 1024 * 1024) {
+        showError('File too large. Maximum size is 2MB.');
+        return;
+    }
+    
+    if (!file.type.startsWith('image/')) {
+        showError('Please upload an image file.');
+        return;
+    }
+    
+    var btn = document.querySelector('.upload-btn');
+    btn.textContent = '⏳ Uploading...';
+    
+    try {
+        var reader = new FileReader();
+        reader.onload = async function(e) {
+            var imageUrl = e.target.result;
+            
+            var { error } = await supabaseClient
+                .from('students')
+                .update({ profile_picture_url: imageUrl })
+                .eq('id', studentId);
+            
+            if (error) throw error;
+            
+            var avatarContainer = document.getElementById('avatarContainer');
+            avatarContainer.innerHTML = `
+                <img src="${imageUrl}" alt="Profile Picture" id="profileImg">
+                <div class="upload-btn" onclick="document.getElementById('profileUpload').click()">
+                    📷 Update
+                    <input type="file" id="profileUpload" accept="image/*" onchange="uploadProfilePicture(event)">
+                </div>
+            `;
+            
+            showSuccess('✅ Profile picture updated!');
+            btn.textContent = '📷 Upload';
+        };
+        reader.readAsDataURL(file);
+    } catch (error) {
+        console.error('Upload error:', error);
+        showError('Error uploading image: ' + error.message);
+        btn.textContent = '📷 Upload';
+    }
+}
+
+// =============================================
+// LOAD SUBJECTS
+// =============================================
+async function loadSubjects() {
+    if (!studentId) {
+        document.getElementById('subjectList').innerHTML = '<p style="color:#999;">No subjects found.</p>';
+        return;
+    }
+    
+    try {
+        var { data: student } = await supabaseClient
+            .from('students')
+            .select('class_id')
+            .eq('id', studentId)
+            .single();
+        
+        if (!student || !student.class_id) {
+            document.getElementById('subjectList').innerHTML = '<p style="color:#999;">Student not assigned to a class.</p>';
+            return;
+        }
+        
+        var { data: classData } = await supabaseClient
+            .from('classes')
+            .select('form_id')
+            .eq('id', student.class_id)
+            .single();
+        
+        if (!classData || !classData.form_id) {
+            document.getElementById('subjectList').innerHTML = '<p style="color:#999;">Form not found for this class.</p>';
+            return;
+        }
+        
+        var { data: formSubjects } = await supabaseClient
+            .from('form_subjects')
+            .select('subject_id, is_compulsory, is_optional, is_root, subjects(name, category)')
+            .eq('form_id', classData.form_id);
+        
+        var container = document.getElementById('subjectList');
+        if (formSubjects && formSubjects.length > 0) {
+            var html = '<table><thead><tr><th>Subject</th><th>Type</th></tr></thead><tbody>';
+            for (var i = 0; i < formSubjects.length; i++) {
+                var s = formSubjects[i];
+                var type = s.is_compulsory ? '🟢 Compulsory' : s.is_optional ? '🟡 Optional' : s.is_root ? '🔵 Root' : '-';
+                var subjectName = s.subjects?.name || 'Unknown';
+                html += '<tr><td>' + subjectName + '</td><td>' + type + '</td></tr>';
+            }
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = '<p style="color:#999;">No subjects assigned to your form.</p>';
+        }
+    } catch (error) {
+        console.error('Subjects error:', error);
+        document.getElementById('subjectList').innerHTML = '<p style="color:#999;">Error loading subjects.</p>';
+    }
+}
+
+// =============================================
+// LOAD ATTENDANCE
+// =============================================
+async function loadAttendance() {
+    if (!studentId) {
+        document.getElementById('attendanceTable').innerHTML = '<p style="color:#999;">No attendance records found.</p>';
+        return;
+    }
+    
+    var { data, error } = await supabaseClient
+        .from('attendance')
+        .select('*')
+        .eq('student_id', studentId)
+        .order('date', { ascending: false });
+    
+    if (error) return showError(error.message);
+    
+    var container = document.getElementById('attendanceTable');
+    if (data && data.length > 0) {
+        var html = '<table><thead><tr><th>Date</th><th>Status</th></tr></thead><tbody>';
+        for (var i = 0; i < data.length; i++) {
+            var a = data[i];
+            var badgeClass = 'badge-' + a.status;
+            html += '<tr><td>' + new Date(a.date).toLocaleDateString() + '</td>';
+            html += '<td><span class="' + badgeClass + '">' + a.status.toUpperCase() + '</span></td></tr>';
+        }
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    } else {
+        container.innerHTML = '<p style="color:#999;padding:20px;text-align:center;">No attendance records found.</p>';
+    }
+}
+
+// =============================================
+// LOAD GRADES
+// =============================================
+async function loadGrades() {
+    if (!studentId) {
+        document.getElementById('gradesTable').innerHTML = '<p style="color:#999;">No grades found.</p>';
+        return;
+    }
+    
+    var { data, error } = await supabaseClient
+        .from('grades')
+        .select('*')
+        .eq('student_id', studentId)
+        .order('created_at', { ascending: false });
+    
+    if (error) return showError(error.message);
+    
+    var container = document.getElementById('gradesTable');
+    if (data && data.length > 0) {
+        var html = '<table><thead><tr><th>Subject</th><th>Score</th><th>Grade</th><th>Term</th><th>Notes</th></tr></thead><tbody>';
+        for (var i = 0; i < data.length; i++) {
+            var g = data[i];
+            var gradeClass = 'grade-' + (g.grade_letter || 'f').toLowerCase();
+            html += '<tr><td><strong>' + g.subject + '</strong></td>';
+            html += '<td>' + (g.score || '-') + '%</td>';
+            html += '<td><span class="' + gradeClass + '">' + (g.grade_letter || '-') + '</span></td>';
+            html += '<td>' + (g.term || '-') + '</td>';
+            html += '<td>' + (g.teacher_notes || '-') + '</td></tr>';
+        }
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    } else {
+        container.innerHTML = '<p style="color:#999;padding:20px;text-align:center;">No grades recorded yet.</p>';
+    }
+}
+
+// =============================================
+// MESSAGES
+// =============================================
+function showSuccess(msg) {
+    var el = document.getElementById('successMsg');
+    el.textContent = '✅ ' + msg;
+    el.style.display = 'block';
+    document.getElementById('errorMsg').style.display = 'none';
+    setTimeout(function() { el.style.display = 'none'; }, 4000);
+}
+
+function showError(msg) {
+    var el = document.getElementById('errorMsg');
+    document.getElementById('errorText').textContent = msg;
+    el.style.display = 'block';
+    document.getElementById('successMsg').style.display = 'none';
+}
+
+// =============================================
+// LOGOUT
+// =============================================
+async function logout() {
+    await supabaseClient.auth.signOut();
+    window.location.href = 'index.html';
+}
+
+// =============================================
+// INIT
+// =============================================
+window.onload = checkAuth;
+
+document.addEventListener('click', function(e) {
+    var sidebar = document.getElementById('sidebar');
+    var toggleBtn = document.getElementById('menuToggle');
+    if (window.innerWidth <= 768) {
+        if (sidebar && sidebar.classList.contains('open')) {
+            var isClickInside = sidebar.contains(e.target) || (toggleBtn && toggleBtn.contains(e.target));
+            if (!isClickInside) {
+                closeSidebar();
+            }
+        }
+    }
+});
+
+// Check for whiteboard sessions every 30 seconds
+setInterval(checkWhiteboardSessions, 30000);
+</script>
+</body>
+</html>

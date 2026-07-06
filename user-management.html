@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - MEZANEYO</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background: #f0f4f8; padding: 20px; }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .header h1 { font-size: 24px; color: #1a2a3a; }
+        .header h1 span { color: #2d6a4f; }
+        .header .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        .btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            font-family: 'Poppins', sans-serif;
+        }
+        .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-warning { background: #ffc107; color: #333; }
+        .btn-sm { padding: 4px 12px; font-size: 12px; }
+        .btn-danger-sm { background: #dc3545; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .btn-danger-sm:hover { background: #c82333; }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-card h3 { font-size: 28px; color: #1a2a3a; }
+        .stat-card p { color: #666; font-size: 13px; }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .filters input, .filters select {
+            padding: 8px 14px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: 'Poppins', sans-serif;
+        }
+        .filters input:focus, .filters select:focus {
+            outline: none;
+            border-color: #2d6a4f;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        table th, table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+            position: sticky;
+            top: 0;
+        }
+        table tr:hover { background: #f8f9fa; }
+        table .role-badge {
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .role-badge.admin { background: #dc3545; color: white; }
+        .role-badge.teacher { background: #ffc107; color: #333; }
+        .role-badge.student { background: #17a2b8; color: white; }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 10px; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+        }
+        .modal-content h2 { margin-bottom: 10px; color: #dc3545; }
+        .modal-content p { color: #666; margin-bottom: 20px; }
+        .modal-content .modal-actions { display: flex; gap: 10px; justify-content: center; }
+        .modal-content .modal-actions button { padding: 10px 30px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; }
+        .btn-confirm { background: #dc3545; color: white; }
+        .btn-confirm:hover { background: #c82333; }
+        .btn-cancel-modal { background: #6c757d; color: white; }
+        .btn-cancel-modal:hover { background: #5a6268; }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            z-index: 2000;
+            animation: slideIn 0.3s ease;
+            max-width: 400px;
+        }
+        .toast.success { background: #28a745; }
+        .toast.error { background: #dc3545; }
+        .toast.info { background: #007bff; }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 15px; }
+            .header { flex-direction: column; align-items: flex-start; }
+            .stats { grid-template-columns: 1fr 1fr; }
+            table th, table td { padding: 8px 10px; font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>👤 User <span>Management</span></h1>
+            <div class="actions">
+                <button class="btn btn-primary" onclick="loadUsers()">🔄 Refresh</button>
+                <button class="btn btn-success" onclick="window.location.href='admin-dashboard.html'">📊 Dashboard</button>
+                <button class="btn btn-danger" onclick="logout()">🚪 Logout</button>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat-card"><h3 id="totalUsers">0</h3><p>Total Users</p></div>
+            <div class="stat-card"><h3 id="totalAdmins">0</h3><p>Admins</p></div>
+            <div class="stat-card"><h3 id="totalTeachers">0</h3><p>Teachers</p></div>
+            <div class="stat-card"><h3 id="totalStudents">0</h3><p>Students</p></div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters">
+            <input type="text" id="searchInput" placeholder="🔍 Search by name or email..." onkeyup="filterUsers()">
+            <select id="roleFilter" onchange="filterUsers()">
+                <option value="all">All Roles</option>
+                <option value="admin">Admin</option>
+                <option value="teacher">Teacher</option>
+                <option value="student">Student</option>
+            </select>
+            <button class="btn btn-warning btn-sm" onclick="clearFilters()">Clear Filters</button>
+            <button class="btn btn-primary btn-sm" onclick="loadUsers()">🔄 Refresh</button>
+        </div>
+
+        <!-- Users Table -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Phone</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    <tr><td colspan="7" class="empty-state">⏳ Loading users...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="margin-top:15px;text-align:center;color:#999;font-size:13px;">
+            Showing <span id="shownCount">0</span> of <span id="totalCount">0</span> users
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-content">
+            <h2>⚠️ Confirm Delete</h2>
+            <p id="deleteMessage">Are you sure you want to delete this user?</p>
+            <p style="font-size:12px;color:#999;margin-bottom:15px;">This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button class="btn-confirm" id="confirmDeleteBtn" onclick="confirmDelete()">🗑️ Delete</button>
+                <button class="btn-cancel-modal" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =============================================
+        // SUPABASE CONFIG
+        // =============================================
+        var SUPABASE_URL = 'https://nivmrwbusbeppdssmfpj.supabase.co';
+        var SUPABASE_ANON_KEY = 'sb_publishable_kwF_yAmJ5AWnbaIe57snrw_fXng7-6a';
+        var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        var allUsers = [];
+        var filteredUsers = [];
+        var deleteTargetId = null;
+
+        // =============================================
+        // CHECK AUTH
+        // =============================================
+        async function checkAuth() {
+            var { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                window.location.href = 'login.html';
+                return;
+            }
+            var user = session.user;
+            var role = user.user_metadata?.role || 'student';
+            if (role !== 'admin') {
+                showToast('You do not have permission to access this page', 'error');
+                setTimeout(function() {
+                    window.location.href = role + '-dashboard.html';
+                }, 2000);
+                return;
+            }
+            loadUsers();
+        }
+
+        // =============================================
+        // LOAD USERS - FIXED
+        // =============================================
+        async function loadUsers() {
+            var tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">⏳ Loading users...</td></tr>';
+
+            try {
+                // Try to load from users table
+                var { data: users, error } = await supabaseClient
+                    .from('users')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    console.error('Error loading users:', error);
+                    
+                    // If users table doesn't exist, try loading from auth
+                    if (error.message && error.message.includes('does not exist')) {
+                        showToast('Users table does not exist. Creating sample data...', 'info');
+                        await createUsersTable();
+                        return;
+                    }
+                    
+                    throw error;
+                }
+
+                // If no users found, show message
+                if (!users || users.length === 0) {
+                    tbody.innerHTML = `
+                        <tr><td colspan="7" class="empty-state">
+                            <div class="icon">📭</div>
+                            <p>No users found in the system.</p>
+                            <p style="font-size:12px;color:#999;margin-top:5px;">Try signing up as a user first.</p>
+                        </td></tr>
+                    `;
+                    document.getElementById('shownCount').textContent = '0';
+                    document.getElementById('totalCount').textContent = '0';
+                    updateStats([]);
+                    return;
+                }
+
+                allUsers = users || [];
+                filteredUsers = [...allUsers];
+                renderUsers();
+                updateStats(allUsers);
+
+            } catch (error) {
+                console.error('Error loading users:', error);
+                showToast('Error loading users: ' + error.message, 'error');
+                tbody.innerHTML = `
+                    <tr><td colspan="7" class="empty-state">
+                        <div class="icon">❌</div>
+                        <p>Error loading users: ${error.message}</p>
+                        <button class="btn btn-primary btn-sm" onclick="loadUsers()" style="margin-top:10px;">🔄 Try Again</button>
+                    </td></tr>
+                `;
+            }
+        }
+
+        // =============================================
+        // CREATE USERS TABLE (if missing)
+        // =============================================
+        async function createUsersTable() {
+            try {
+                // Try to create users table
+                var createSQL = `
+                    CREATE TABLE IF NOT EXISTS users (
+                        id BIGINT PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY,
+                        auth_user_id UUID UNIQUE,
+                        email TEXT UNIQUE NOT NULL,
+                        full_name TEXT NOT NULL,
+                        role TEXT NOT NULL CHECK (role IN ('admin', 'teacher', 'student')),
+                        phone TEXT,
+                        created_at TIMESTAMPTZ DEFAULT NOW(),
+                        updated_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+                    ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+                    CREATE POLICY "Allow public access" ON users FOR ALL USING (true);
+                `;
+                
+                // Note: This won't work via client-side. Tell user to create table manually.
+                showToast('⚠️ Users table not found. Please run the SQL schema in Supabase.', 'error');
+                document.getElementById('usersTableBody').innerHTML = `
+                    <tr><td colspan="7" class="empty-state">
+                        <div class="icon">⚠️</div>
+                        <p>Users table not found in database.</p>
+                        <p style="font-size:12px;color:#999;margin-top:5px;">
+                            Please run the SQL schema in your Supabase SQL Editor.
+                        </p>
+                        <button class="btn btn-primary btn-sm" onclick="loadUsers()" style="margin-top:10px;">🔄 Try Again</button>
+                    </td></tr>
+                `;
+            } catch (error) {
+                console.error('Create table error:', error);
+            }
+        }
+
+        // =============================================
+        // RENDER USERS
+        // =============================================
+        function renderUsers() {
+            var tbody = document.getElementById('usersTableBody');
+            var users = filteredUsers;
+
+            if (!users || users.length === 0) {
+                tbody.innerHTML = `
+                    <tr><td colspan="7" class="empty-state">
+                        <div class="icon">📭</div>
+                        <p>No users match your filters.</p>
+                        <button class="btn btn-warning btn-sm" onclick="clearFilters()" style="margin-top:10px;">Clear Filters</button>
+                    </td></tr>
+                `;
+                document.getElementById('shownCount').textContent = '0';
+                document.getElementById('totalCount').textContent = allUsers.length;
+                return;
+            }
+
+            var html = '';
+            for (var i = 0; i < users.length; i++) {
+                var u = users[i];
+                var roleClass = u.role || 'student';
+                var roleEmoji = roleClass === 'admin' ? '🛡️' : roleClass === 'teacher' ? '👨‍🏫' : '👨‍🎓';
+                var createdDate = u.created_at ? new Date(u.created_at).toLocaleDateString() : 'N/A';
+
+                html += `
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td><strong>${u.full_name || 'Unknown'}</strong></td>
+                        <td>${u.email || '-'}</td>
+                        <td><span class="role-badge ${roleClass}">${roleEmoji} ${roleClass}</span></td>
+                        <td>${u.phone || '-'}</td>
+                        <td>${createdDate}</td>
+                        <td>
+                            <button class="btn-danger-sm" onclick="openDeleteModal('${u.id}', '${u.full_name || 'this user'}')">🗑️ Delete</button>
+                        </td>
+                    </tr>
+                `;
+            }
+
+            tbody.innerHTML = html;
+            document.getElementById('shownCount').textContent = users.length;
+            document.getElementById('totalCount').textContent = allUsers.length;
+        }
+
+        // =============================================
+        // UPDATE STATS
+        // =============================================
+        function updateStats(users) {
+            var total = users ? users.length : 0;
+            var admins = users ? users.filter(function(u) { return u.role === 'admin'; }).length : 0;
+            var teachers = users ? users.filter(function(u) { return u.role === 'teacher'; }).length : 0;
+            var students = users ? users.filter(function(u) { return u.role === 'student'; }).length : 0;
+
+            document.getElementById('totalUsers').textContent = total;
+            document.getElementById('totalAdmins').textContent = admins;
+            document.getElementById('totalTeachers').textContent = teachers;
+            document.getElementById('totalStudents').textContent = students;
+        }
+
+        // =============================================
+        // FILTER USERS
+        // =============================================
+        function filterUsers() {
+            var searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            var roleFilter = document.getElementById('roleFilter').value;
+
+            filteredUsers = allUsers.filter(function(u) {
+                var nameMatch = u.full_name && u.full_name.toLowerCase().includes(searchTerm);
+                var emailMatch = u.email && u.email.toLowerCase().includes(searchTerm);
+                var roleMatch = roleFilter === 'all' || u.role === roleFilter;
+                return (nameMatch || emailMatch) && roleMatch;
+            });
+
+            renderUsers();
+        }
+
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('roleFilter').value = 'all';
+            filteredUsers = [...allUsers];
+            renderUsers();
+        }
+
+        // =============================================
+        // DELETE USER
+        // =============================================
+        function openDeleteModal(userId, userName) {
+            deleteTargetId = userId;
+            document.getElementById('deleteMessage').textContent = 
+                'Are you sure you want to delete "' + userName + '"?';
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+            deleteTargetId = null;
+        }
+
+        async function confirmDelete() {
+            if (!deleteTargetId) return;
+
+            var btn = document.getElementById('confirmDeleteBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Deleting...';
+
+            try {
+                // STEP 1: Get user data first (to know auth_user_id)
+                var { data: userData, error: fetchError } = await supabaseClient
+                    .from('users')
+                    .select('auth_user_id, email')
+                    .eq('id', deleteTargetId)
+                    .maybeSingle();
+
+                if (fetchError) {
+                    // If user doesn't exist, still try to delete
+                    console.warn('User fetch error:', fetchError);
+                }
+
+                // STEP 2: Delete from users table
+                var { error: deleteError } = await supabaseClient
+                    .from('users')
+                    .delete()
+                    .eq('id', deleteTargetId);
+
+                if (deleteError) throw deleteError;
+
+                // STEP 3: Try to delete from auth (if auth_user_id exists)
+                if (userData && userData.auth_user_id) {
+                    try {
+                        // This requires admin privileges - may not work via client
+                        console.log('Auth user to delete:', userData.auth_user_id);
+                        showToast('User removed from users table. If you want to delete from auth, use Supabase Dashboard.', 'info');
+                    } catch (authError) {
+                        console.warn('Auth deletion not supported:', authError);
+                    }
+                }
+
+                showToast('✅ User deleted successfully!', 'success');
+                closeModal();
+                loadUsers();
+
+            } catch (error) {
+                console.error('Delete error:', error);
+                showToast('❌ Error deleting user: ' + error.message, 'error');
+            }
+
+            btn.disabled = false;
+            btn.textContent = '🗑️ Delete';
+        }
+
+        // =============================================
+        // TOAST NOTIFICATIONS
+        // =============================================
+        function showToast(message, type) {
+            var existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+
+            var toast = document.createElement('div');
+            toast.className = 'toast ' + (type || 'info');
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(function() {
+                if (toast.parentNode) toast.remove();
+            }, 4000);
+        }
+
+        // =============================================
+        // LOGOUT
+        // =============================================
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'index.html';
+        }
+
+        // =============================================
+        // INIT
+        // =============================================
+        window.onload = checkAuth;
+
+        // Close modal on outside click
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // Keyboard shortcut: Escape to close modal
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModal();
+        });
+    </script>
+</body>
+</html>

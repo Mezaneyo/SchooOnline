@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Whiteboard - MEZANEYO</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background: #1a2a3a; height: 100vh; overflow: hidden; }
+
+        .container { display: flex; flex-direction: column; height: 100vh; }
+
+        .header {
+            background: #1a2a3a;
+            color: white;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            border-bottom: 1px solid #2d4a5a;
+            flex-shrink: 0;
+        }
+        .header h1 { font-size: 16px; }
+        .header h1 span { color: #4caf50; }
+        .header .room-code {
+            background: #2d4a5a;
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .header .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+        .header .actions button {
+            padding: 5px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            transition: opacity 0.3s;
+        }
+        .header .actions button:hover { opacity: 0.85; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: #333; }
+        .recording-badge {
+            background: #dc3545;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            animation: pulse 1.5s infinite;
+            display: none;
+        }
+        .recording-badge.active { display: inline-block; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        .whiteboard-container {
+            flex: 1;
+            background: white;
+            position: relative;
+            min-height: 300px;
+        }
+        #whiteboardCanvas {
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+            touch-action: none;
+            background: white;
+            display: block;
+        }
+
+        .toolbar {
+            background: #2d4a5a;
+            padding: 6px 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            border-top: 1px solid #1a2a3a;
+            flex-shrink: 0;
+        }
+        .toolbar button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            transition: all 0.3s;
+            background: #445566;
+            color: white;
+        }
+        .toolbar button:hover { transform: scale(1.05); }
+        .toolbar button.active { background: #4caf50; color: white; }
+        .toolbar .color-picker {
+            width: 28px;
+            height: 28px;
+            border: 2px solid white;
+            border-radius: 50%;
+            cursor: pointer;
+            padding: 0;
+        }
+        .toolbar .size-picker {
+            width: 50px;
+            padding: 3px 6px;
+            border-radius: 4px;
+            border: none;
+            background: #445566;
+            color: white;
+            font-size: 11px;
+        }
+
+        .participants {
+            background: #1a2a3a;
+            color: white;
+            padding: 5px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            border-top: 1px solid #2d4a5a;
+            flex-shrink: 0;
+        }
+        .participants .count { font-size: 12px; }
+        .participants .count span { color: #4caf50; font-weight: 700; }
+        .participants .list { display: flex; gap: 4px; flex-wrap: wrap; }
+        .participants .list .badge {
+            background: #2d4a5a;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+        }
+        .participants .list .badge.teacher { background: #dc3545; }
+
+        .controls-hint {
+            background: rgba(0,0,0,0.8);
+            color: #999;
+            padding: 4px 16px;
+            text-align: center;
+            font-size: 11px;
+            border-top: 1px solid #2d4a5a;
+            flex-shrink: 0;
+        }
+        .controls-hint kbd {
+            background: #2d4a5a;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .header { padding: 6px 10px; }
+            .header h1 { font-size: 13px; }
+            .toolbar { gap: 4px; padding: 4px 8px; }
+            .toolbar button { padding: 3px 7px; font-size: 10px; }
+            .participants { padding: 4px 10px; font-size: 11px; }
+            .whiteboard-container { min-height: 250px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🖊️ MEZANEYO <span>Whiteboard</span></h1>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <span class="room-code">🆔 <span id="roomId">Loading...</span></span>
+                <span class="recording-badge" id="recordingBadge">🔴 RECORDING</span>
+            </div>
+            <div class="actions">
+                <button class="btn-primary" onclick="toggleCollaboration()">👥 Share</button>
+                <button class="btn-success" id="recordBtn" onclick="toggleRecording()">🔴 Record</button>
+                <button class="btn-danger" onclick="leaveRoom()">🚪 Leave</button>
+            </div>
+        </div>
+
+        <!-- Whiteboard -->
+        <div class="whiteboard-container">
+            <canvas id="whiteboardCanvas"></canvas>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <button class="active" onclick="selectTool(this, 'pen')">✏️ Pen</button>
+            <button onclick="selectTool(this, 'eraser')">🧹 Eraser</button>
+            <button onclick="selectTool(this, 'line')">📏 Line</button>
+            <button onclick="selectTool(this, 'rect')">▭ Rect</button>
+            <button onclick="selectTool(this, 'circle')">⭕ Circle</button>
+            <button onclick="selectTool(this, 'text')">📝 Text</button>
+            <input type="color" class="color-picker" id="colorPicker" value="#000000" onchange="updateColor(this.value)">
+            <select class="size-picker" id="sizePicker" onchange="updateSize(this.value)">
+                <option value="2">Small</option>
+            <option value="4" selected>Medium</option>
+                <option value="8">Large</option>
+            </select>
+            <button onclick="undoAction()">↩️</button>
+            <button onclick="redoAction()">↪️</button>
+            <button onclick="clearBoard()">🗑️</button>
+            <button onclick="saveBoard()">💾</button>
+        </div>
+
+        <!-- Participants -->
+        <div class="participants">
+            <div class="count">👥 <span id="participantCount">1</span></div>
+            <div class="list" id="participantList">
+                <span class="badge teacher" id="teacherBadge">👨‍🏫 Teacher</span>
+            </div>
+        </div>
+
+        <div class="controls-hint">
+            <kbd>Ctrl+Z</kbd> Undo <kbd>Ctrl+Y</kbd> Redo <kbd>Esc</kbd> Leave
+        </div>
+    </div>
+
+    <script>
+        // =============================================
+        // SUPABASE CONFIG
+        // =============================================
+        var SUPABASE_URL = 'https://nivmrwbusbeppdssmfpj.supabase.co';
+        var SUPABASE_ANON_KEY = 'sb_publishable_kwF_yAmJ5AWnbaIe57snrw_fXng7-6a';
+        var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // =============================================
+        // WHITEBOARD STATE - FIXED
+        // =============================================
+        var canvas, ctx;
+        var isDrawing = false;
+        var lastX = 0, lastY = 0;
+        var currentTool = 'pen';
+        var currentColor = '#000000';
+        var currentSize = 4;
+        var isEraser = false;
+        
+        // History as ARRAY (fixed)
+        var historyArray = [];
+        var historyIndex = -1;
+        var maxHistory = 30;
+        
+        var isRecording = false;
+        var recordedActions = [];
+        var roomId = new URLSearchParams(window.location.search).get('room') || 'wb-' + Date.now();
+        var sessionId = new URLSearchParams(window.location.search).get('session') || null;
+        var role = new URLSearchParams(window.location.search).get('role') || 'student';
+        var userName = new URLSearchParams(window.location.search).get('name') || 'User';
+        var isTeacher = role === 'teacher';
+        var collaborationActive = false;
+
+        document.getElementById('roomId').textContent = roomId;
+
+        if (isTeacher) {
+            document.getElementById('teacherBadge').style.display = 'inline-block';
+        } else {
+            document.getElementById('teacherBadge').style.display = 'none';
+        }
+
+        // =============================================
+        // CANVAS SETUP
+        // =============================================
+        function setupCanvas() {
+            canvas = document.getElementById('whiteboardCanvas');
+            var container = canvas.parentElement;
+            
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            ctx = canvas.getContext('2d', { willReadFrequently: true });
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            // White background
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Save initial state
+            saveHistory();
+
+            // Resize
+            window.addEventListener('resize', function() {
+                var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                canvas.width = container.clientWidth;
+                canvas.height = container.clientHeight;
+                ctx.putImageData(imageData, 0, 0);
+            });
+        }
+
+        // =============================================
+        // HISTORY FUNCTIONS - FIXED
+        // =============================================
+        function saveHistory() {
+            var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            // Remove any future states
+            if (historyIndex < historyArray.length - 1) {
+                historyArray = historyArray.slice(0, historyIndex + 1);
+            }
+            historyArray.push(imageData);
+            if (historyArray.length > maxHistory) {
+                historyArray.shift();
+            }
+            historyIndex = historyArray.length - 1;
+        }
+
+        function undoAction() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                ctx.putImageData(historyArray[historyIndex], 0, 0);
+                console.log('↩️ Undo: index', historyIndex);
+            }
+        }
+
+        function redoAction() {
+            if (historyIndex < historyArray.length - 1) {
+                historyIndex++;
+                ctx.putImageData(historyArray[historyIndex], 0, 0);
+                console.log('↪️ Redo: index', historyIndex);
+            }
+        }
+
+        // =============================================
+        // DRAWING FUNCTIONS
+        // =============================================
+        function getPosition(e) {
+            var rect = canvas.getBoundingClientRect();
+            var clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            var clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            return {
+                x: (clientX - rect.left) * (canvas.width / rect.width),
+                y: (clientY - rect.top) * (canvas.height / rect.height)
+            };
+        }
+
+        function startDrawing(e) {
+            e.preventDefault();
+            isDrawing = true;
+            var pos = getPosition(e);
+            lastX = pos.x;
+            lastY = pos.y;
+
+            if (currentTool === 'text') {
+                var text = prompt('Enter text:', 'Hello');
+                if (text) {
+                    ctx.font = (currentSize * 6) + 'px Arial';
+                    ctx.fillStyle = currentColor;
+                    ctx.fillText(text, pos.x, pos.y);
+                    saveHistory();
+                }
+                isDrawing = false;
+                return;
+            }
+
+            if (['line', 'rect', 'circle'].includes(currentTool)) {
+                // Save starting point
+                return;
+            }
+        }
+
+        function draw(e) {
+            e.preventDefault();
+            if (!isDrawing) return;
+            var pos = getPosition(e);
+
+            if (currentTool === 'pen' || currentTool === 'eraser') {
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.strokeStyle = currentTool === 'eraser' ? 'white' : currentColor;
+                ctx.lineWidth = currentTool === 'eraser' ? currentSize * 3 : currentSize;
+                ctx.stroke();
+                lastX = pos.x;
+                lastY = pos.y;
+            }
+        }
+
+        function stopDrawing(e) {
+            e.preventDefault();
+            if (!isDrawing) return;
+            isDrawing = false;
+
+            var pos = getPosition(e);
+            var startX = lastX;
+            var startY = lastY;
+
+            if (currentTool === 'line') {
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = currentSize;
+                ctx.stroke();
+                saveHistory();
+            } else if (currentTool === 'rect') {
+                var w = pos.x - startX;
+                var h = pos.y - startY;
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = currentSize;
+                ctx.strokeRect(startX, startY, w, h);
+                saveHistory();
+            } else if (currentTool === 'circle') {
+                var radius = Math.sqrt(Math.pow(pos.x - startX, 2) + Math.pow(pos.y - startY, 2));
+                ctx.beginPath();
+                ctx.arc(startX, startY, radius, 0, Math.PI * 2);
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = currentSize;
+                ctx.stroke();
+                saveHistory();
+            } else if (currentTool === 'pen' || currentTool === 'eraser') {
+                saveHistory();
+            }
+        }
+
+        // =============================================
+        // TOOL SELECTION
+        // =============================================
+        function selectTool(btn, tool) {
+            document.querySelectorAll('.toolbar button').forEach(function(b) { 
+                b.classList.remove('active'); 
+            });
+            btn.classList.add('active');
+            currentTool = tool;
+            canvas.style.cursor = tool === 'eraser' ? 'cell' : 'crosshair';
+            document.getElementById('colorPicker').disabled = (tool === 'eraser');
+        }
+
+        function updateColor(color) {
+            currentColor = color;
+        }
+
+        function updateSize(size) {
+            currentSize = parseInt(size);
+        }
+
+        // =============================================
+        // CLEAR BOARD
+        // =============================================
+        function clearBoard() {
+            if (!confirm('Clear the whiteboard?')) return;
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            saveHistory();
+        }
+
+        // =============================================
+        // SAVE BOARD
+        // =============================================
+        function saveBoard() {
+            var link = document.createElement('a');
+            link.download = 'whiteboard-' + roomId + '.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showNotification('💾 Board saved!');
+        }
+
+        // =============================================
+        // COLLABORATION (TogetherJS)
+        // =============================================
+        function toggleCollaboration() {
+            if (!collaborationActive) {
+                // Load TogetherJS
+                var script = document.createElement('script');
+                script.src = 'https://togetherjs.com/togetherjs-min.js';
+                script.onload = function() {
+                    TogetherJS(this);
+                    collaborationActive = true;
+                    showNotification('👥 Share the link with students to collaborate!');
+                };
+                document.head.appendChild(script);
+            } else {
+                if (window.TogetherJS) {
+                    TogetherJS.destroy();
+                }
+                collaborationActive = false;
+                showNotification('👥 Collaboration ended');
+            }
+        }
+
+        // =============================================
+        // RECORDING
+        // =============================================
+        function toggleRecording() {
+            if (!isRecording) {
+                isRecording = true;
+                recordedActions = [];
+                document.getElementById('recordingBadge').classList.add('active');
+                document.getElementById('recordBtn').textContent = '⏹️ Stop';
+                document.getElementById('recordBtn').className = 'btn-danger';
+                showNotification('🔴 Recording started!');
+            } else {
+                isRecording = false;
+                document.getElementById('recordingBadge').classList.remove('active');
+                document.getElementById('recordBtn').textContent = '🔴 Record';
+                document.getElementById('recordBtn').className = 'btn-success';
+                saveRecording();
+            }
+        }
+
+        async function saveRecording() {
+            try {
+                var imageData = canvas.toDataURL('image/png');
+                var recordingData = {
+                    session_id: sessionId,
+                    room_id: roomId,
+                    actions: recordedActions,
+                    image_url: imageData,
+                    recorded_at: new Date().toISOString(),
+                    teacher_id: isTeacher ? 'teacher' : 'student'
+                };
+
+                var { error } = await supabaseClient
+                    .from('recorded_whiteboards')
+                    .insert([recordingData]);
+
+                if (error) throw error;
+
+                showNotification('✅ Recording saved! Students can watch later.');
+                recordedActions = [];
+            } catch (error) {
+                console.error('Recording save error:', error);
+                showNotification('⚠️ Error saving recording: ' + error.message);
+            }
+        }
+
+        // =============================================
+        // LEAVE ROOM
+        // =============================================
+        function leaveRoom() {
+            if (confirm('Leave the whiteboard?')) {
+                if (isRecording) {
+                    saveRecording();
+                }
+                window.location.href = isTeacher ? 'teacher-dashboard.html' : 'student-dashboard.html';
+            }
+        }
+
+        // =============================================
+        // NOTIFICATIONS
+        // =============================================
+        function showNotification(message) {
+            var existing = document.querySelector('.notification-popup');
+            if (existing) existing.remove();
+
+            var div = document.createElement('div');
+            div.className = 'notification-popup';
+            div.style.cssText = `
+                position: fixed;
+                bottom: 70px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0,0,0,0.9);
+                color: white;
+                padding: 10px 20px;
+                border-radius: 8px;
+                font-size: 13px;
+                z-index: 9999;
+                max-width: 90%;
+                text-align: center;
+                border: 1px solid #4caf50;
+                animation: fadeInOut 3s forwards;
+            `;
+            div.textContent = message;
+            document.body.appendChild(div);
+
+            setTimeout(function() {
+                if (div.parentNode) div.remove();
+            }, 3000);
+        }
+
+        // Add style for notification
+        var styleEl = document.createElement('style');
+        styleEl.textContent = `
+            @keyframes fadeInOut {
+                0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+                15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+                85% { opacity: 1; }
+                100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            }
+        `;
+        document.head.appendChild(styleEl);
+
+        // =============================================
+        // KEYBOARD SHORTCUTS
+        // =============================================
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') leaveRoom();
+            if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undoAction(); }
+            if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redoAction(); }
+            if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveBoard(); }
+        });
+
+        // =============================================
+        // MOUSE & TOUCH EVENTS
+        // =============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            setupCanvas();
+
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseleave', function(e) {
+                if (isDrawing) stopDrawing(e);
+            });
+
+            canvas.addEventListener('touchstart', startDrawing, { passive: false });
+            canvas.addEventListener('touchmove', draw, { passive: false });
+            canvas.addEventListener('touchend', stopDrawing, { passive: false });
+        });
+
+        // =============================================
+        // INIT
+        // =============================================
+        console.log('🖊️ Whiteboard initialized');
+        console.log('🆔 Room:', roomId);
+        console.log('👤 Role:', role);
+        console.log('📝 Name:', userName);
+        console.log('✅ Ready to draw!');
+
+        // Check if canvas is ready
+        window.addEventListener('load', function() {
+            setupCanvas();
+            // Update participant count
+            document.getElementById('participantCount').textContent = '1';
+        });
+    </script>
+</body>
+</html>
