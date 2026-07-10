@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forum - MEZANEYO School</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background: #f0f4f8; }
+
+        .navbar {
+            background: #1a2a3a;
+            padding: 12px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo { display: flex; align-items: center; gap: 12px; color: white; font-size: 20px; font-weight: 700; }
+        .logo span { color: #4caf50; }
+        .nav-links { display: flex; list-style: none; gap: 20px; align-items: center; }
+        .nav-links a { color: #c8d6e5; text-decoration: none; font-weight: 500; font-size: 14px; }
+        .nav-links a:hover { color: #4caf50; }
+        .btn-back { background: #2d6a4f; color: white; border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+
+        .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+
+        .forum-header {
+            background: white;
+            padding: 25px 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            margin-bottom: 25px;
+        }
+        .forum-header h1 { font-size: 24px; color: #1a2a3a; }
+        .forum-header .meta { color: #666; font-size: 14px; margin-top: 4px; }
+        .forum-header .actions { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
+
+        .btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s;
+        }
+        .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-warning { background: #ffc107; color: #333; }
+        .btn-sm { padding: 4px 12px; font-size: 12px; }
+        .btn-outline { background: transparent; border: 2px solid #2d6a4f; color: #2d6a4f; }
+
+        .post-card {
+            background: white;
+            padding: 20px 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            margin-bottom: 16px;
+            transition: all 0.3s;
+        }
+        .post-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .post-card.pinned { border-left: 4px solid #ffc107; background: #fffdf5; }
+        .post-card .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .post-card .post-author {
+            font-weight: 600;
+            color: #1a2a3a;
+            font-size: 15px;
+        }
+        .post-card .post-author .role {
+            font-weight: 400;
+            font-size: 12px;
+            padding: 2px 10px;
+            border-radius: 20px;
+            margin-left: 6px;
+        }
+        .post-card .post-author .role.teacher { background: #dc3545; color: white; }
+        .post-card .post-author .role.student { background: #17a2b8; color: white; }
+        .post-card .post-author .role.admin { background: #6c757d; color: white; }
+        .post-card .post-time { color: #999; font-size: 12px; }
+        .post-card .post-content { color: #333; font-size: 15px; line-height: 1.6; margin: 8px 0 12px 0; white-space: pre-wrap; word-wrap: break-word; }
+        .post-card .post-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .post-card .replies-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #eee;
+        }
+        .post-card .replies-section .reply {
+            padding: 10px 0;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .post-card .replies-section .reply:last-child { border-bottom: none; }
+        .post-card .replies-section .reply .reply-author {
+            font-weight: 500;
+            font-size: 13px;
+            color: #1a2a3a;
+        }
+        .post-card .replies-section .reply .reply-author .role {
+            font-weight: 400;
+            font-size: 11px;
+            padding: 1px 8px;
+            border-radius: 20px;
+            margin-left: 4px;
+        }
+        .post-card .replies-section .reply .reply-content { color: #444; font-size: 14px; margin-top: 2px; }
+        .post-card .replies-section .reply .reply-time { color: #999; font-size: 11px; }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: #999;
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 100%;
+            margin: 20px;
+        }
+        .modal-content h2 { margin-bottom: 15px; color: #1a2a3a; }
+        .modal-content .form-group { margin-bottom: 14px; }
+        .modal-content label { display: block; font-weight: 500; margin-bottom: 4px; font-size: 13px; }
+        .modal-content input, .modal-content textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+        }
+        .modal-content input:focus, .modal-content textarea:focus { outline: none; border-color: #2d6a4f; }
+        .modal-content textarea { min-height: 100px; resize: vertical; }
+        .modal-actions { display: flex; gap: 10px; margin-top: 15px; }
+        .modal-actions button { padding: 10px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            z-index: 9999;
+            animation: slideIn 0.3s ease;
+            max-width: 400px;
+        }
+        .toast.success { background: #28a745; }
+        .toast.error { background: #dc3545; }
+        .toast.info { background: #007bff; }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .loading { text-align: center; padding: 40px; color: #999; }
+
+        @media (max-width: 768px) {
+            .container { padding: 0 12px; margin: 15px auto; }
+            .forum-header { padding: 18px 20px; }
+            .forum-header h1 { font-size: 20px; }
+            .post-card { padding: 15px 18px; }
+            .modal-content { margin: 12px; padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">🏫 <span>MEZANEYO</span> Forum</div>
+            <ul class="nav-links">
+                <li><a href="#" onclick="goBack()">← Back</a></li>
+                <li><span id="userRole" style="color:#4caf50;font-size:13px;"></span></li>
+                <li><button class="btn-back" onclick="logout()">Logout</button></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="forum-header">
+            <h1 id="forumTitle">💬 Class Forum</h1>
+            <div class="meta" id="forumMeta">Loading forum details...</div>
+            <div class="actions">
+                <button class="btn btn-primary" onclick="openNewPostModal()">+ New Post</button>
+                <button class="btn btn-outline" onclick="refreshForum()">🔄 Refresh</button>
+            </div>
+        </div>
+
+        <div id="postsContainer">
+            <div class="loading">⏳ Loading posts...</div>
+        </div>
+    </div>
+
+    <!-- New Post Modal -->
+    <div class="modal" id="newPostModal">
+        <div class="modal-content">
+            <h2>📝 Create New Post</h2>
+            <div class="form-group">
+                <label>Title (optional)</label>
+                <input type="text" id="postTitle" placeholder="Enter post title (optional)">
+            </div>
+            <div class="form-group">
+                <label>Content *</label>
+                <textarea id="postContent" placeholder="Write your post content..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-success" onclick="submitPost()">📤 Post</button>
+                <button class="btn btn-danger" onclick="closeModal('newPostModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reply Modal -->
+    <div class="modal" id="replyModal">
+        <div class="modal-content">
+            <h2>💬 Reply to Post</h2>
+            <div class="form-group">
+                <label>Your Reply *</label>
+                <textarea id="replyContent" placeholder="Write your reply..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-success" onclick="submitReply()">📤 Reply</button>
+                <button class="btn btn-danger" onclick="closeModal('replyModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =============================================
+        // API HELPER
+        // =============================================
+        async function apiFetch(url, options = {}) {
+            const response = await fetch(url, {
+                ...options,
+                headers: { 'Content-Type': 'application/json', ...options.headers }
+            });
+            return response.json();
+        }
+
+        // =============================================
+        // STATE
+        // =============================================
+        var forumId = null;
+        var forumData = null;
+        var posts = [];
+        var currentUser = null;
+        var currentUserRole = null;
+        var currentUserId = null;
+        var currentUserName = null;
+        var replyingToPostId = null;
+
+        // =============================================
+        // INIT
+        // =============================================
+        window.onload = function() {
+            checkAuth();
+        };
+
+        // =============================================
+        // CHECK AUTH
+        // =============================================
+        async function checkAuth() {
+            try {
+                var data = await apiFetch('/api/auth/me');
+                if (!data.success) {
+                    window.location.href = '/login';
+                    return;
+                }
+                currentUser = data.user;
+                currentUserId = data.user.id;
+                currentUserRole = data.user.role || 'student';
+                currentUserName = data.user.full_name || 'User';
+
+                document.getElementById('userRole').textContent = '👤 ' + currentUserName + ' (' + currentUserRole + ')';
+
+                var params = new URLSearchParams(window.location.search);
+                forumId = params.get('id');
+
+                if (!forumId) {
+                    showToast('No forum specified.', 'error');
+                    setTimeout(function() {
+                        window.location.href = '/' + currentUserRole + '-dashboard';
+                    }, 2000);
+                    return;
+                }
+
+                loadForum();
+            } catch (error) {
+                console.error('Auth error:', error);
+                window.location.href = '/login';
+            }
+        }
+
+        // =============================================
+        // LOAD FORUM
+        // =============================================
+        async function loadForum() {
+            try {
+                var data = await apiFetch('/api/forums');
+                if (data.success && data.forums) {
+                    forumData = data.forums.find(function(f) { return f.id == forumId; });
+                    if (forumData) {
+                        document.getElementById('forumTitle').textContent = '💬 ' + forumData.title;
+                        document.getElementById('forumMeta').textContent = 
+                            (forumData.description || '') + 
+                            ' • 👨‍🏫 ' + (forumData.teachers?.full_name || 'Teacher');
+                        await loadPosts();
+                    } else {
+                        showToast('Forum not found.', 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading forum:', error);
+                showToast('Error loading forum: ' + error.message, 'error');
+            }
+        }
+
+        // =============================================
+        // LOAD POSTS
+        // =============================================
+        async function loadPosts() {
+            try {
+                var data = await apiFetch('/api/forum-posts?forum_id=' + forumId);
+                if (data.success) {
+                    posts = data.posts || [];
+                    
+                    // Load replies for each post
+                    for (var i = 0; i < posts.length; i++) {
+                        var repliesData = await apiFetch('/api/forum-replies?post_id=' + posts[i].id);
+                        posts[i].replies = repliesData.success ? repliesData.replies : [];
+                    }
+                    
+                    renderPosts();
+                }
+            } catch (error) {
+                console.error('Error loading posts:', error);
+                showToast('Error loading posts: ' + error.message, 'error');
+            }
+        }
+
+        // =============================================
+        // RENDER POSTS
+        // =============================================
+        function renderPosts() {
+            var container = document.getElementById('postsContainer');
+
+            if (!posts || posts.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">💬</div>
+                        <p>No posts yet. Be the first to start a discussion!</p>
+                        <button class="btn btn-primary" onclick="openNewPostModal()" style="margin-top:12px;">+ Create First Post</button>
+                    </div>
+                `;
+                return;
+            }
+
+            var html = '';
+            for (var i = 0; i < posts.length; i++) {
+                var post = posts[i];
+                var isPinned = post.is_pinned || false;
+                var isAuthor = post.user_id === currentUserId;
+                var isTeacherOrAdmin = currentUserRole === 'teacher' || currentUserRole === 'admin';
+
+                html += `
+                    <div class="post-card ${isPinned ? 'pinned' : ''}" id="post-${post.id}">
+                        <div class="post-header">
+                            <div>
+                                <span class="post-author">
+                                    ${post.user_id === currentUserId ? '👤 You' : '👤 ' + (post.user_name || 'User')}
+                                    <span class="role ${post.user_id === currentUserId ? currentUserRole : 'student'}">${post.user_id === currentUserId ? currentUserRole : 'student'}</span>
+                                    ${isPinned ? '📌' : ''}
+                                </span>
+                                ${post.title ? `<div style="font-weight:600;font-size:16px;margin-top:2px;">${post.title}</div>` : ''}
+                            </div>
+                            <span class="post-time">${new Date(post.created_at).toLocaleString()}</span>
+                        </div>
+                        <div class="post-content">${escapeHtml(post.content)}</div>
+                        <div class="post-actions">
+                            <button class="btn btn-sm btn-primary" onclick="openReplyModal('${post.id}')">💬 Reply</button>
+                            ${isAuthor ? `<button class="btn btn-sm btn-danger" onclick="deletePost('${post.id}')">🗑️</button>` : ''}
+                            ${(isAuthor || isTeacherOrAdmin) ? 
+                                `<button class="btn btn-sm btn-warning" onclick="togglePin('${post.id}', ${!isPinned})">${isPinned ? '📌 Unpin' : '📌 Pin'}</button>` : ''}
+                        </div>
+                        <div class="replies-section">
+                            ${renderReplies(post)}
+                            ${post.replies && post.replies.length > 0 ? `<div style="margin-top:8px;font-size:12px;color:#999;">${post.replies.length} replies</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        // =============================================
+        // RENDER REPLIES
+        // =============================================
+        function renderReplies(post) {
+            if (!post.replies || post.replies.length === 0) return '';
+
+            var html = '';
+            for (var i = 0; i < post.replies.length; i++) {
+                var reply = post.replies[i];
+                var isAuthor = reply.user_id === currentUserId;
+                var isTeacherOrAdmin = currentUserRole === 'teacher' || currentUserRole === 'admin';
+
+                html += `
+                    <div class="reply">
+                        <div class="reply-author">
+                            ${reply.user_id === currentUserId ? '👤 You' : '👤 User'}
+                            <span class="role ${reply.user_id === currentUserId ? currentUserRole : 'student'}">${reply.user_id === currentUserId ? currentUserRole : 'student'}</span>
+                            <span class="reply-time">• ${new Date(reply.created_at).toLocaleString()}</span>
+                        </div>
+                        <div class="reply-content">${escapeHtml(reply.content)}</div>
+                        ${(isAuthor || isTeacherOrAdmin) ? `<button class="btn btn-sm btn-danger" onclick="deleteReply('${reply.id}', '${post.id}')" style="margin-top:4px;">🗑️</button>` : ''}
+                    </div>
+                `;
+            }
+            return html;
+        }
+
+        // =============================================
+        // HELPERS
+        // =============================================
+        function escapeHtml(text) {
+            if (!text) return '';
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // =============================================
+        // NEW POST
+        // =============================================
+        function openNewPostModal() {
+            document.getElementById('postTitle').value = '';
+            document.getElementById('postContent').value = '';
+            openModal('newPostModal');
+        }
+
+        async function submitPost() {
+            var title = document.getElementById('postTitle').value.trim();
+            var content = document.getElementById('postContent').value.trim();
+
+            if (!content) {
+                showToast('Please write some content.', 'error');
+                return;
+            }
+
+            try {
+                var data = await apiFetch('/api/forum-posts', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        forum_id: forumId,
+                        user_id: currentUserId,
+                        user_name: currentUserName,
+                        content: content,
+                        title: title || null,
+                        is_pinned: false
+                    })
+                });
+
+                if (data.success) {
+                    showToast('✅ Post created!', 'success');
+                    closeModal('newPostModal');
+                    await loadPosts();
+                } else {
+                    showToast('Error creating post: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error creating post: ' + error.message, 'error');
+            }
+        }
+
+        // =============================================
+        // DELETE POST
+        // =============================================
+        async function deletePost(postId) {
+            if (!confirm('Delete this post and all replies?')) return;
+
+            try {
+                var data = await apiFetch('/api/forum-posts/' + postId, { method: 'DELETE' });
+                if (data.success) {
+                    showToast('✅ Post deleted', 'success');
+                    await loadPosts();
+                } else {
+                    showToast('Error deleting post: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error deleting post: ' + error.message, 'error');
+            }
+        }
+
+        // =============================================
+        // PIN/UNPIN POST
+        // =============================================
+        async function togglePin(postId, pin) {
+            try {
+                var data = await apiFetch('/api/forum-posts/' + postId, {
+                    method: 'PUT',
+                    body: JSON.stringify({ is_pinned: pin })
+                });
+                if (data.success) {
+                    showToast(pin ? '📌 Post pinned!' : '📌 Post unpinned!', 'success');
+                    await loadPosts();
+                } else {
+                    showToast('Error: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            }
+        }
+
+        // =============================================
+        // REPLY
+        // =============================================
+        function openReplyModal(postId) {
+            replyingToPostId = postId;
+            document.getElementById('replyContent').value = '';
+            openModal('replyModal');
+        }
+
+        async function submitReply() {
+            var content = document.getElementById('replyContent').value.trim();
+
+            if (!content) {
+                showToast('Please write a reply.', 'error');
+                return;
+            }
+
+            if (!replyingToPostId) {
+                showToast('Error: No post selected.', 'error');
+                return;
+            }
+
+            try {
+                var data = await apiFetch('/api/forum-replies', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        post_id: replyingToPostId,
+                        user_id: currentUserId,
+                        content: content
+                    })
+                });
+
+                if (data.success) {
+                    showToast('✅ Reply posted!', 'success');
+                    closeModal('replyModal');
+                    replyingToPostId = null;
+                    await loadPosts();
+                } else {
+                    showToast('Error posting reply: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error posting reply: ' + error.message, 'error');
+            }
+        }
+
+        // =============================================
+        // DELETE REPLY
+        // =============================================
+        async function deleteReply(replyId, postId) {
+            if (!confirm('Delete this reply?')) return;
+
+            try {
+                var data = await apiFetch('/api/forum-replies/' + replyId, { method: 'DELETE' });
+                if (data.success) {
+                    showToast('✅ Reply deleted', 'success');
+                    await loadPosts();
+                } else {
+                    showToast('Error deleting reply: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error deleting reply: ' + error.message, 'error');
+            }
+        }
+
+        // =============================================
+        // REFRESH
+        // =============================================
+        function refreshForum() {
+            loadPosts();
+            showToast('🔄 Forum refreshed', 'info');
+        }
+
+        // =============================================
+        // GO BACK
+        // =============================================
+        function goBack() {
+            var role = currentUserRole || 'student';
+            window.location.href = '/' + role + '-dashboard';
+        }
+
+        // =============================================
+        // LOGOUT
+        // =============================================
+        async function logout() {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            window.location.href = '/';
+        }
+
+        // =============================================
+        // MODAL HELPERS
+        // =============================================
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        document.querySelectorAll('.modal').forEach(function(modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) this.classList.remove('active');
+            });
+        });
+
+        // =============================================
+        // TOAST
+        // =============================================
+        function showToast(message, type) {
+            var existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+
+            var toast = document.createElement('div');
+            toast.className = 'toast ' + (type || 'info');
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(function() {
+                if (toast.parentNode) toast.remove();
+            }, 4000);
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal.active').forEach(function(modal) {
+                    modal.classList.remove('active');
+                });
+            }
+        });
+    </script>
+</body>
+</html>
