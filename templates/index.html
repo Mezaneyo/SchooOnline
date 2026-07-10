@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEZANEYO ONLINE SCHOOL | Secondary Education</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Slideshow Styles */
+        .slideshow-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            min-height: 500px;
+            overflow: hidden;
+        }
+        .slideshow-container .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+            background-size: cover;
+            background-position: center;
+        }
+        .slideshow-container .slide.active { opacity: 1; }
+        .slideshow-container .slide .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+            padding: 20px;
+        }
+        .slideshow-container .slide .overlay h1 {
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+        }
+        .slideshow-container .slide .overlay h1 .highlight { color: #4caf50; }
+        .slideshow-container .slide .overlay p {
+            font-size: 20px;
+            max-width: 600px;
+            margin-bottom: 30px;
+            text-shadow: 1px 1px 5px rgba(0,0,0,0.5);
+        }
+        .slideshow-container .slide .overlay .btn {
+            display: inline-block;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-size: 16px;
+            margin: 0 8px;
+        }
+        .slideshow-container .slide .overlay .btn-primary {
+            background: #4caf50;
+            color: white;
+        }
+        .slideshow-container .slide .overlay .btn-primary:hover {
+            background: #388e3c;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+        }
+        .slideshow-container .slide .overlay .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+        .slideshow-container .slide .overlay .btn-secondary:hover {
+            background: white;
+            color: #1a2a3a;
+            transform: translateY(-2px);
+        }
+        .slideshow-indicators {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            z-index: 10;
+        }
+        .slideshow-indicators .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.4);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .slideshow-indicators .dot.active {
+            background: #4caf50;
+            transform: scale(1.2);
+        }
+        .slideshow-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.5);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            cursor: pointer;
+            font-size: 24px;
+            border-radius: 4px;
+            z-index: 10;
+            transition: background 0.3s;
+        }
+        .slideshow-arrow:hover { background: rgba(0,0,0,0.8); }
+        .slideshow-arrow.prev { left: 20px; }
+        .slideshow-arrow.next { right: 20px; }
+
+        .features-section { padding: 80px 20px; max-width: 1200px; margin: 0 auto; }
+        .features-section h2 { text-align: center; font-size: 36px; margin-bottom: 50px; color: #1a2a3a; }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+        .feature-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+        .feature-icon { font-size: 48px; margin-bottom: 15px; }
+        .feature-card h3 { font-size: 20px; margin-bottom: 10px; color: #1a2a3a; }
+        .feature-card p { color: #666; font-size: 15px; }
+
+        .courses-section { padding: 80px 20px; background: #f0f4f8; }
+        .courses-section h2 { text-align: center; font-size: 36px; margin-bottom: 50px; color: #1a2a3a; }
+        .course-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+        }
+        .course-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s;
+            text-align: center;
+        }
+        .course-card:hover { transform: translateY(-5px); }
+        .course-card .course-icon { font-size: 40px; margin-bottom: 10px; }
+        .course-card h3 { font-size: 18px; margin-bottom: 8px; color: #1a2a3a; }
+        .course-card p { color: #666; font-size: 14px; margin-bottom: 15px; }
+        .course-card .btn {
+            background: #2d6a4f;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+        .course-card .btn:hover { background: #1b4332; }
+
+        .navbar {
+            background: #1a2a3a;
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo { display: flex; align-items: center; gap: 12px; color: white; font-size: 24px; font-weight: 700; }
+        .logo img { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; }
+        .logo span { color: #4caf50; }
+        .nav-links { display: flex; list-style: none; gap: 30px; align-items: center; }
+        .nav-links a { color: #c8d6e5; text-decoration: none; font-weight: 500; transition: color 0.3s; font-size: 15px; }
+        .nav-links a:hover { color: #4caf50; }
+        .mobile-menu { display: none; color: white; font-size: 28px; cursor: pointer; }
+
+        .auth-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .auth-status .user-name { color: white; font-size: 14px; }
+        .auth-status .btn-logout {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .auth-status .btn-logout:hover { background: #c82333; }
+        .btn-dashboard {
+            background: #2d6a4f;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            text-decoration: none;
+        }
+        .btn-dashboard:hover { background: #1b4332; }
+
+        footer {
+            background: #1a2a3a;
+            color: #c8d6e5;
+            padding: 50px 20px 20px;
+        }
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+        .footer-section h3 { color: white; font-size: 20px; margin-bottom: 10px; }
+        .footer-section h4 { color: white; font-size: 16px; margin-bottom: 10px; }
+        .footer-section ul { list-style: none; }
+        .footer-section ul li { margin-bottom: 8px; }
+        .footer-section ul li a { color: #c8d6e5; text-decoration: none; transition: color 0.3s; }
+        .footer-section ul li a:hover { color: #4caf50; }
+        .footer-bottom { text-align: center; padding-top: 20px; border-top: 1px solid #2d4a5a; color: #7a8b9e; font-size: 14px; }
+
+        @media (max-width: 768px) {
+            .nav-links { display: none; flex-direction: column; position: absolute; top: 70px; left: 0; width: 100%; background: #1a2a3a; padding: 20px; gap: 15px; }
+            .nav-links.active { display: flex; }
+            .mobile-menu { display: block; }
+            .slideshow-container { height: 70vh; min-height: 400px; }
+            .slideshow-container .slide .overlay h1 { font-size: 28px; }
+            .slideshow-container .slide .overlay p { font-size: 16px; }
+            .slideshow-arrow { padding: 10px 14px; font-size: 18px; }
+            .features-grid, .course-grid { grid-template-columns: 1fr; }
+            .footer-content { grid-template-columns: 1fr; text-align: center; }
+        }
+        @media (max-width: 480px) {
+            .slideshow-container .slide .overlay h1 { font-size: 22px; }
+            .slideshow-container .slide .overlay .btn { padding: 10px 18px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="MEZANEYO Logo">
+                <span>MEZANEYO</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/" class="active">Home</a></li>
+                <li><a href="/courses">Courses</a></li>
+                <li><a href="/portal">Student Portal</a></li>
+                <li id="authNav">
+                    <a href="/login" id="authLink">Login</a>
+                </li>
+            </ul>
+            <div class="mobile-menu" onclick="document.querySelector('.nav-links').classList.toggle('active')">☰</div>
+        </div>
+    </nav>
+
+    <!-- Slideshow -->
+    <div class="slideshow-container" id="slideshowContainer">
+        <div class="slide active" style="background-image: url('{{ url_for('static', filename='images/logo.png') }}');">
+            <div class="overlay">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="MEZANEYO Logo" style="width:120px;height:120px;border-radius:16px;margin-bottom:20px;box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+                <h1>Welcome to <span class="highlight">MEZANEYO</span> ONLINE SCHOOL</h1>
+                <p>Quality secondary education accessible anywhere, anytime. Master subjects at your own pace with expert-crafted lessons.</p>
+                <div>
+                    <a href="/signup" class="btn btn-primary">Start Learning →</a>
+                    <a href="#features" class="btn btn-secondary">Learn More</a>
+                </div>
+            </div>
+        </div>
+        <div class="slide" style="background-image: url('{{ url_for('static', filename='images/i1.jpg') }}');">
+            <div class="overlay">
+                <h1>📚 Complete Curriculum</h1>
+                <p>Mathematics, Sciences, Languages, Humanities - aligned with national standards.</p>
+                <div><a href="/signup" class="btn btn-primary">Start Learning →</a></div>
+            </div>
+        </div>
+        <div class="slide" style="background-image: url('{{ url_for('static', filename='images/i2.jpg') }}');">
+            <div class="overlay">
+                <h1>🎥 Video Lessons</h1>
+                <p>Engaging video explanations with real-world examples and animations.</p>
+                <div><a href="/signup" class="btn btn-primary">Start Learning →</a></div>
+            </div>
+        </div>
+        <div class="slide" style="background-image: url('{{ url_for('static', filename='images/i3.jpg') }}');">
+            <div class="overlay">
+                <h1>📝 Interactive Quizzes</h1>
+                <p>Test your knowledge with instant feedback and detailed explanations.</p>
+                <div><a href="/signup" class="btn btn-primary">Start Learning →</a></div>
+            </div>
+        </div>
+        <div class="slide" style="background-image: url('{{ url_for('static', filename='images/i4.jpg') }}');">
+            <div class="overlay">
+                <h1>📊 Track Progress</h1>
+                <p>Monitor your learning journey with detailed analytics and certificates.</p>
+                <div><a href="/signup" class="btn btn-primary">Start Learning →</a></div>
+            </div>
+        </div>
+        <div class="slide" style="background-image: url('{{ url_for('static', filename='images/i5.jpg') }}');">
+            <div class="overlay">
+                <h1>🏫 MEZANEYO ONLINE SCHOOL</h1>
+                <p>Join thousands of students learning online today!</p>
+                <div><a href="/signup" class="btn btn-primary">Start Learning →</a></div>
+            </div>
+        </div>
+        <button class="slideshow-arrow prev" onclick="prevSlide()">❮</button>
+        <button class="slideshow-arrow next" onclick="nextSlide()">❯</button>
+        <div class="slideshow-indicators">
+            <span class="dot active" onclick="goToSlide(0)"></span>
+            <span class="dot" onclick="goToSlide(1)"></span>
+            <span class="dot" onclick="goToSlide(2)"></span>
+            <span class="dot" onclick="goToSlide(3)"></span>
+            <span class="dot" onclick="goToSlide(4)"></span>
+            <span class="dot" onclick="goToSlide(5)"></span>
+        </div>
+    </div>
+
+    <!-- Features -->
+    <section class="features-section" id="features">
+        <h2>Why Choose MEZANEYO?</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📚</div>
+                <h3>Complete Curriculum</h3>
+                <p>Mathematics, Sciences, Languages, Humanities - aligned with national standards.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎥</div>
+                <h3>Video Lessons</h3>
+                <p>Engaging video explanations with real-world examples and animations.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📝</div>
+                <h3>Interactive Quizzes</h3>
+                <p>Test your knowledge with instant feedback and detailed explanations.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Track Progress</h3>
+                <p>Monitor your learning journey with detailed analytics and certificates.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Courses -->
+    <section class="courses-section">
+        <h2>Popular Courses</h2>
+        <div class="course-grid" id="popularCourses">
+            <div class="course-card">
+                <div class="course-icon">📐</div>
+                <h3>Mathematics</h3>
+                <p>Algebra, Geometry, Calculus & Statistics</p>
+                <a href="/courses" class="btn">Learn More →</a>
+            </div>
+            <div class="course-card">
+                <div class="course-icon">📖</div>
+                <h3>English Language</h3>
+                <p>Grammar, Literature, Writing & Comprehension</p>
+                <a href="/courses" class="btn">Learn More →</a>
+            </div>
+            <div class="course-card">
+                <div class="course-icon">⚛️</div>
+                <h3>Physics</h3>
+                <p>Mechanics, Electricity, Optics & Modern Physics</p>
+                <a href="/courses" class="btn">Learn More →</a>
+            </div>
+            <div class="course-card">
+                <div class="course-icon">🧪</div>
+                <h3>Chemistry</h3>
+                <p>Organic, Inorganic, Physical Chemistry & Lab Work</p>
+                <a href="/courses" class="btn">Learn More →</a>
+            </div>
+            <div class="course-card">
+                <div class="course-icon">🧬</div>
+                <h3>Biology</h3>
+                <p>Cell Biology, Genetics, Ecology & Human Anatomy</p>
+                <a href="/courses" class="btn">Learn More →</a>
+            </div>
+            <div class="course-card">
+                <div class="course-icon">🏛️</div>
+                <h3>History</h3>
+                <p>World History, African History & Modern Events</p>
+                <a href="/courses" class="btn">Learn More →</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>MEZANEYO ONLINE SCHOOL</h3>
+                <p>Empowering secondary students with quality digital education.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/courses">Courses</a></li>
+                    <li><a href="/dashboard">Dashboard</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Contact</h4>
+                <p>Email: info@mezaneyo.com</p>
+                <p>Phone: +265 99 5514 049</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 MEZANEYO ONLINE SCHOOL. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        var slides = document.querySelectorAll('.slide');
+        var dots = document.querySelectorAll('.dot');
+        var currentSlide = 0;
+        var interval;
+
+        function goToSlide(index) {
+            slides.forEach(function(s) { s.classList.remove('active'); });
+            dots.forEach(function(d) { d.classList.remove('active'); });
+            currentSlide = index;
+            if (slides[currentSlide]) slides[currentSlide].classList.add('active');
+            if (dots[currentSlide]) dots[currentSlide].classList.add('active');
+            resetTimer();
+        }
+
+        function nextSlide() {
+            var next = (currentSlide + 1) % slides.length;
+            goToSlide(next);
+        }
+
+        function prevSlide() {
+            var prev = (currentSlide - 1 + slides.length) % slides.length;
+            goToSlide(prev);
+        }
+
+        function resetTimer() {
+            if (interval) { clearInterval(interval); interval = null; }
+            startTimer();
+        }
+
+        function startTimer() {
+            interval = setInterval(nextSlide, 4000);
+        }
+
+        document.getElementById('slideshowContainer').addEventListener('mouseenter', function() {
+            if (interval) clearInterval(interval);
+        });
+        document.getElementById('slideshowContainer').addEventListener('mouseleave', startTimer);
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') prevSlide();
+            if (e.key === 'ArrowRight') nextSlide();
+        });
+
+        startTimer();
+
+        // Auth check
+        async function checkAuth() {
+            try {
+                var response = await fetch('/api/auth/me');
+                var data = await response.json();
+                var authNav = document.getElementById('authNav');
+                if (data.success && data.user) {
+                    var user = data.user;
+                    var dashboardUrl = user.role === 'admin' ? '/admin-dashboard' : 
+                                      user.role === 'teacher' ? '/teacher-dashboard' : '/student-dashboard';
+                    authNav.innerHTML = `
+                        <div class="auth-status">
+                            <span class="user-name">👋 ${user.full_name}</span>
+                            <a href="${dashboardUrl}" class="btn-dashboard">📊 Dashboard</a>
+                            <button class="btn-logout" onclick="logout()">Logout</button>
+                        </div>
+                    `;
+                } else {
+                    authNav.innerHTML = `<a href="/login" id="authLink">Login</a>`;
+                }
+            } catch (error) {
+                console.error('Auth check error:', error);
+            }
+        }
+
+        async function logout() {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            window.location.href = '/';
+        }
+
+        checkAuth();
+    </script>
+</body>
+</html>
