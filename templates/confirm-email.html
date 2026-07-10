@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Confirmation - MEZANEYO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #1a2a3a 0%, #2d6a4f 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; margin: 0; }
+        .container { background: white; padding: 50px 40px; border-radius: 16px; max-width: 500px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        .container .icon { font-size: 80px; margin-bottom: 20px; }
+        .container h2 { color: #1a2a3a; margin-bottom: 10px; font-size: 28px; }
+        .container p { color: #666; font-size: 16px; line-height: 1.6; margin-bottom: 8px; }
+        .container .btn { display: inline-block; padding: 14px 32px; background: #2d6a4f; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; text-decoration: none; transition: background 0.3s; margin-top: 15px; }
+        .container .btn:hover { background: #1b4332; }
+        .status-box { padding: 20px; border-radius: 12px; margin: 25px 0; display: none; }
+        .status-box.success { display: block; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status-box.error { display: block; background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status-box.loading { display: block; background: #cce5ff; color: #004085; border: 1px solid #b8daff; }
+        .spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 4px solid rgba(0,0,0,0.1);
+            border-radius: 50%;
+            border-top-color: #2d6a4f;
+            animation: spin 0.8s ease-in-out infinite;
+            margin: 10px auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">✉️</div>
+        <h2>Email Confirmation</h2>
+        <p>We're verifying your email address...</p>
+
+        <div id="statusBox" class="status-box loading">
+            <div class="spinner"></div>
+            <p style="margin-top:10px;">⏳ Verifying your email, please wait...</p>
+        </div>
+
+        <p id="messageText"></p>
+        <a href="/login" class="btn hidden" id="loginBtn">🔐 Go to Login</a>
+    </div>
+
+    <script>
+        async function handleConfirmation() {
+            var statusBox = document.getElementById('statusBox');
+            var messageText = document.getElementById('messageText');
+            var loginBtn = document.getElementById('loginBtn');
+
+            try {
+                var params = new URLSearchParams(window.location.search);
+                var token = params.get('token');
+                var type = params.get('type');
+
+                if (!token) {
+                    statusBox.className = 'status-box error';
+                    statusBox.innerHTML = '<p>❌ Invalid or missing confirmation link.</p>';
+                    messageText.textContent = 'The confirmation link is invalid. Please try signing up again.';
+                    loginBtn.classList.remove('hidden');
+                    return;
+                }
+
+                // Call backend to confirm email
+                var response = await fetch('/api/auth/confirm?token=' + token + '&type=' + type);
+                var data = await response.json();
+
+                if (data.success) {
+                    statusBox.className = 'status-box success';
+                    statusBox.innerHTML = '<p>✅ Email confirmed successfully!</p>';
+                    messageText.textContent = '🎉 Welcome to MEZANEYO School! Your account is now active.';
+                    loginBtn.classList.remove('hidden');
+                    loginBtn.textContent = '🔐 Login Now';
+                    
+                    setTimeout(function() {
+                        window.location.href = '/login';
+                    }, 3000);
+                } else {
+                    statusBox.className = 'status-box error';
+                    statusBox.innerHTML = '<p>❌ Confirmation failed</p>';
+                    messageText.textContent = data.error || 'Something went wrong.';
+                    loginBtn.classList.remove('hidden');
+                }
+            } catch (error) {
+                statusBox.className = 'status-box error';
+                statusBox.innerHTML = '<p>❌ Confirmation failed</p>';
+                messageText.textContent = error.message || 'Something went wrong.';
+                loginBtn.classList.remove('hidden');
+            }
+        }
+
+        window.onload = handleConfirmation;
+    </script>
+</body>
+</html>
