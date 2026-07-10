@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - MEZANEYO School</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .signup-container {
+            max-width: 550px;
+            margin: 40px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .signup-container h2 { text-align: center; color: #1a2a3a; margin-bottom: 8px; font-size: 28px; }
+        .signup-container .subtitle { text-align: center; color: #666; margin-bottom: 30px; font-size: 14px; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 14px; }
+        .form-group label .required { color: #dc3545; }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: 'Poppins', sans-serif;
+            transition: border-color 0.3s;
+            background: white;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #2d6a4f;
+            box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.1);
+        }
+        .form-group .error-text { color: #dc3545; font-size: 12px; margin-top: 4px; display: none; }
+        .form-group .help-text { color: #999; font-size: 12px; margin-top: 4px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .btn-signup {
+            width: 100%;
+            padding: 14px;
+            background: #2d6a4f;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+        .btn-signup:hover { background: #1b4332; }
+        .btn-signup:disabled { background: #999; cursor: not-allowed; }
+        .login-link { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
+        .login-link a { color: #2d6a4f; font-weight: 600; text-decoration: none; }
+        .login-link a:hover { text-decoration: underline; }
+        .success-msg {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            border: 1px solid #c3e6cb;
+        }
+        .error-msg {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            border: 1px solid #f5c6cb;
+        }
+        .password-strength {
+            height: 4px;
+            border-radius: 2px;
+            margin-top: 8px;
+            background: #e0e0e0;
+        }
+        .password-strength .bar {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.3s, background 0.3s;
+            width: 0%;
+        }
+        .password-strength .bar.weak { width: 33%; background: #dc3545; }
+        .password-strength .bar.medium { width: 66%; background: #ffc107; }
+        .password-strength .bar.strong { width: 100%; background: #28a745; }
+        .field-group {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #2d6a4f;
+        }
+        .field-group h4 { color: #1a2a3a; margin-bottom: 10px; font-size: 15px; }
+        .navbar {
+            background: #1a2a3a;
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo { display: flex; align-items: center; gap: 12px; color: white; font-size: 24px; font-weight: 700; }
+        .logo span { color: #4caf50; }
+        .nav-links { display: flex; list-style: none; gap: 30px; align-items: center; }
+        .nav-links a { color: #c8d6e5; text-decoration: none; font-weight: 500; transition: color 0.3s; font-size: 15px; }
+        .nav-links a:hover { color: #4caf50; }
+        .mobile-menu { display: none; color: white; font-size: 28px; cursor: pointer; }
+        @media (max-width: 768px) {
+            .nav-links { display: none; flex-direction: column; position: absolute; top: 70px; left: 0; width: 100%; background: #1a2a3a; padding: 20px; gap: 15px; }
+            .nav-links.active { display: flex; }
+            .mobile-menu { display: block; }
+            .signup-container { margin: 20px; padding: 25px; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">🏫 <span>MEZANEYO</span></div>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/login">Login</a></li>
+            </ul>
+            <div class="mobile-menu" onclick="document.querySelector('.nav-links').classList.toggle('active')">☰</div>
+        </div>
+    </nav>
+
+    <div class="signup-container">
+        <h2>📝 Create Account</h2>
+        <p class="subtitle">Join MEZANEYO Online School today!</p>
+
+        <div id="successMsg" class="success-msg">✅ <span id="successText">Account created successfully!</span></div>
+        <div id="errorMsg" class="error-msg">❌ <span id="errorText">Error message</span></div>
+
+        <form id="signupForm" onsubmit="return false;">
+            <div class="form-group">
+                <label>Full Name <span class="required">*</span></label>
+                <input type="text" id="fullName" placeholder="e.g., Chimwemwe Banda" required>
+                <div class="error-text" id="fullNameError">Please enter your full name</div>
+            </div>
+
+            <div class="form-group">
+                <label>Email Address <span class="required">*</span></label>
+                <input type="email" id="email" placeholder="you@mezaneyo.school" required>
+                <div class="error-text" id="emailError">Please enter a valid email address</div>
+            </div>
+
+            <div class="form-group">
+                <label>Password <span class="required">*</span></label>
+                <input type="password" id="password" placeholder="Create a password (min 6 characters)" required>
+                <div class="help-text">🔒 Must be at least 6 characters</div>
+                <div class="password-strength"><div class="bar" id="passwordBar"></div></div>
+                <div class="error-text" id="passwordError">Password must be at least 6 characters</div>
+            </div>
+
+            <div class="form-group">
+                <label>Confirm Password <span class="required">*</span></label>
+                <input type="password" id="confirmPassword" placeholder="Confirm your password" required>
+                <div class="error-text" id="confirmError">Passwords do not match</div>
+            </div>
+
+            <div class="form-group">
+                <label>I am a... <span class="required">*</span></label>
+                <select id="role">
+                    <option value="student">👨‍🎓 Student</option>
+                    <option value="teacher">👨‍🏫 Teacher</option>
+                    <option value="admin">🛡️ Admin</option>
+                </select>
+            </div>
+
+            <div id="studentFields">
+                <div class="field-group">
+                    <h4>📚 Class Registration</h4>
+                    <div class="form-group">
+                        <label>Select Your Form <span class="required">*</span></label>
+                        <select id="formSelect" onchange="updateStudentFields()">
+                            <option value="">-- Select Form --</option>
+                        </select>
+                        <div class="error-text" id="formError">Please select your form</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Select Your Class <span class="required">*</span></label>
+                        <select id="classSelect">
+                            <option value="">-- Select Class --</option>
+                        </select>
+                        <div class="error-text" id="classError">Please select your class</div>
+                    </div>
+                </div>
+
+                <div class="field-group">
+                    <h4>📖 Subject Selection</h4>
+                    <div id="subjectFields">
+                        <p style="color:#999; font-size:13px;">Select your form first to see available subjects.</p>
+                    </div>
+                </div>
+
+                <div class="field-group">
+                    <h4>🆔 Student Details</h4>
+                    <div class="form-group">
+                        <label>Student ID <span class="required">*</span></label>
+                        <input type="text" id="studentId" placeholder="Enter your student ID (e.g., MEZ-001)">
+                        <div class="help-text">If you don't have one, contact the admin.</div>
+                        <div class="error-text" id="studentIdError">Student ID is required</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Guardian Name</label>
+                        <input type="text" id="guardianName" placeholder="e.g., John Banda">
+                    </div>
+                    <div class="form-group">
+                        <label>Guardian Phone</label>
+                        <input type="text" id="guardianPhone" placeholder="e.g., +265 888 123 456">
+                    </div>
+                </div>
+            </div>
+
+            <div id="teacherFields" style="display:none;">
+                <div class="field-group">
+                    <h4>👨‍🏫 Teacher Details</h4>
+                    <div class="form-group">
+                        <label>Subject Specialty</label>
+                        <input type="text" id="subjectSpecialty" placeholder="e.g., Mathematics">
+                    </div>
+                    <div class="form-group">
+                        <label>Employee ID</label>
+                        <input type="text" id="employeeId" placeholder="e.g., TCH-001">
+                    </div>
+                </div>
+            </div>
+
+            <div id="adminFields" style="display:none;">
+                <div class="field-group">
+                    <h4>🛡️ Admin Details</h4>
+                    <p style="color:#666; font-size:13px;">Admin accounts have full access to the school management system.</p>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-signup" id="signupBtn" onclick="handleSignup()">
+                🚀 Create Account
+            </button>
+        </form>
+
+        <div class="login-link">
+            Already have an account? <a href="/login">Sign in here</a>
+        </div>
+    </div>
+
+    <script>
+        // Load forms and classes on page load
+        async function loadSchoolData() {
+            try {
+                // Load forms
+                var formsRes = await fetch('/api/forms');
+                var formsData = await formsRes.json();
+                var formSelect = document.getElementById('formSelect');
+                if (formsData.success && formsData.forms) {
+                    formSelect.innerHTML = '<option value="">-- Select Form --</option>';
+                    formsData.forms.forEach(function(f) {
+                        formSelect.innerHTML += '<option value="' + f.id + '">' + f.name + '</option>';
+                    });
+                }
+
+                // Load classes
+                var classesRes = await fetch('/api/classes');
+                var classesData = await classesRes.json();
+                window.allClasses = classesData.success ? classesData.classes : [];
+            } catch (error) {
+                console.error('Error loading school data:', error);
+            }
+        }
+
+        function updateStudentFields() {
+            var formId = document.getElementById('formSelect').value;
+            var classSelect = document.getElementById('classSelect');
+            var subjectContainer = document.getElementById('subjectFields');
+
+            // Update classes
+            if (formId && window.allClasses) {
+                var filtered = window.allClasses.filter(function(c) { return c.form_id == formId; });
+                classSelect.innerHTML = '<option value="">-- Select Class --</option>';
+                filtered.forEach(function(c) {
+                    classSelect.innerHTML += '<option value="' + c.id + '">' + c.class_name + '</option>';
+                });
+            }
+
+            // Update subjects
+            if (formId) {
+                fetch('/api/form-subjects/' + formId)
+                    .then(function(res) { return res.json(); })
+                    .then(function(data) {
+                        if (data.success && data.subjects) {
+                            var html = '';
+                            var compulsory = data.subjects.filter(function(s) { return s.is_compulsory; });
+                            var optional = data.subjects.filter(function(s) { return s.is_optional; });
+                            var root = data.subjects.filter(function(s) { return s.is_root; });
+
+                            if (compulsory.length > 0) {
+                                html += '<div style="margin-bottom:12px;padding:10px;background:#e8f5e9;border-radius:6px;">';
+                                html += '<label style="font-weight:600;font-size:13px;color:#2e7d32;">📚 Compulsory Subjects:</label>';
+                                html += '<div style="color:#555;font-size:13px;margin-top:4px;">';
+                                html += compulsory.map(function(s) { return '📖 ' + (s.subjects?.name || 'Unknown'); }).join(' • ');
+                                html += '</div></div>';
+                            }
+
+                            if (optional.length > 0) {
+                                html += '<div class="form-group">';
+                                html += '<label>Choose Optional Subject <span class="required">*</span></label>';
+                                html += '<select id="optionalSubject"><option value="">-- Select Optional Subject --</option>';
+                                optional.forEach(function(s) {
+                                    html += '<option value="' + s.subject_id + '">' + (s.subjects?.name || 'Unknown') + '</option>';
+                                });
+                                html += '</select></div>';
+                            }
+
+                            if (root.length > 0) {
+                                html += '<div class="form-group">';
+                                html += '<label>Choose Root <span class="required">*</span></label>';
+                                html += '<select id="rootSelect"><option value="">-- Select Root --</option>';
+                                root.forEach(function(s) {
+                                    html += '<option value="' + s.subject_id + '">' + (s.subjects?.name || 'Unknown') + '</option>';
+                                });
+                                html += '</select></div>';
+                            }
+
+                            subjectContainer.innerHTML = html;
+                        }
+                    });
+            }
+        }
+
+        document.getElementById('role').addEventListener('change', function() {
+            var role = this.value;
+            document.getElementById('studentFields').style.display = role === 'student' ? 'block' : 'none';
+            document.getElementById('teacherFields').style.display = role === 'teacher' ? 'block' : 'none';
+            document.getElementById('adminFields').style.display = role === 'admin' ? 'block' : 'none';
+        });
+
+        document.getElementById('password').addEventListener('input', function() {
+            var password = this.value;
+            var bar = document.getElementById('passwordBar');
+            if (password.length === 0) { bar.style.width = '0%'; return; }
+            var strength = 0;
+            if (password.length >= 6) strength++;
+            if (password.length >= 10) strength++;
+            if (/[A-Z]/.test(password) && /[a-z]/.test(password)) strength++;
+            if (/\d/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            if (strength <= 2) bar.className = 'bar weak';
+            else if (strength <= 3) bar.className = 'bar medium';
+            else bar.className = 'bar strong';
+        });
+
+        document.getElementById('confirmPassword').addEventListener('input', function() {
+            var password = document.getElementById('password').value;
+            var confirm = this.value;
+            var error = document.getElementById('confirmError');
+            if (confirm && password !== confirm) {
+                this.style.borderColor = '#dc3545';
+                error.style.display = 'block';
+            } else {
+                this.style.borderColor = '#e0e0e0';
+                error.style.display = 'none';
+            }
+        });
+
+        async function handleSignup() {
+            var fullName = document.getElementById('fullName').value.trim();
+            var email = document.getElementById('email').value.trim();
+            var password = document.getElementById('password').value;
+            var confirmPassword = document.getElementById('confirmPassword').value;
+            var role = document.getElementById('role').value;
+            var studentId = document.getElementById('studentId').value.trim();
+            var guardianName = document.getElementById('guardianName').value.trim();
+            var guardianPhone = document.getElementById('guardianPhone').value.trim();
+
+            document.getElementById('successMsg').style.display = 'none';
+            document.getElementById('errorMsg').style.display = 'none';
+
+            var hasError = false;
+
+            if (!fullName) {
+                document.getElementById('fullNameError').style.display = 'block';
+                document.getElementById('fullName').style.borderColor = '#dc3545';
+                hasError = true;
+            } else {
+                document.getElementById('fullNameError').style.display = 'none';
+                document.getElementById('fullName').style.borderColor = '#e0e0e0';
+            }
+
+            if (!email || !email.includes('@')) {
+                document.getElementById('emailError').style.display = 'block';
+                document.getElementById('email').style.borderColor = '#dc3545';
+                hasError = true;
+            } else {
+                document.getElementById('emailError').style.display = 'none';
+                document.getElementById('email').style.borderColor = '#e0e0e0';
+            }
+
+            if (password.length < 6) {
+                document.getElementById('passwordError').style.display = 'block';
+                document.getElementById('password').style.borderColor = '#dc3545';
+                hasError = true;
+            } else {
+                document.getElementById('passwordError').style.display = 'none';
+                document.getElementById('password').style.borderColor = '#e0e0e0';
+            }
+
+            if (password !== confirmPassword) {
+                document.getElementById('confirmError').style.display = 'block';
+                document.getElementById('confirmPassword').style.borderColor = '#dc3545';
+                hasError = true;
+            } else {
+                document.getElementById('confirmError').style.display = 'none';
+                document.getElementById('confirmPassword').style.borderColor = '#e0e0e0';
+            }
+
+            if (role === 'student') {
+                var formId = document.getElementById('formSelect').value;
+                var classId = document.getElementById('classSelect').value;
+                if (!formId) {
+                    document.getElementById('formError').style.display = 'block';
+                    hasError = true;
+                } else {
+                    document.getElementById('formError').style.display = 'none';
+                }
+                if (!classId) {
+                    document.getElementById('classError').style.display = 'block';
+                    hasError = true;
+                } else {
+                    document.getElementById('classError').style.display = 'none';
+                }
+                if (!studentId) {
+                    document.getElementById('studentIdError').style.display = 'block';
+                    document.getElementById('studentId').style.borderColor = '#dc3545';
+                    hasError = true;
+                } else {
+                    document.getElementById('studentIdError').style.display = 'none';
+                    document.getElementById('studentId').style.borderColor = '#e0e0e0';
+                }
+            }
+
+            if (hasError) return;
+
+            var btn = document.getElementById('signupBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Creating account...';
+
+            try {
+                var data = {
+                    full_name: fullName,
+                    email: email,
+                    password: password,
+                    role: role
+                };
+
+                if (role === 'student') {
+                    data.student_id = studentId;
+                    data.guardian_name = guardianName;
+                    data.guardian_phone = guardianPhone;
+                    data.form_id = document.getElementById('formSelect').value;
+                    data.class_id = document.getElementById('classSelect').value;
+                    data.optional_subject = document.getElementById('optionalSubject')?.value || null;
+                    data.root_subject = document.getElementById('rootSelect')?.value || null;
+                }
+
+                var response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                var result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('successMsg').style.display = 'block';
+                    document.getElementById('successText').textContent = '🎉 Account created! Redirecting to login...';
+                    setTimeout(function() {
+                        window.location.href = '/login?email=' + encodeURIComponent(email);
+                    }, 2000);
+                } else {
+                    document.getElementById('errorMsg').style.display = 'block';
+                    document.getElementById('errorText').textContent = result.error || 'Registration failed';
+                    btn.disabled = false;
+                    btn.textContent = '🚀 Create Account';
+                }
+            } catch (error) {
+                document.getElementById('errorMsg').style.display = 'block';
+                document.getElementById('errorText').textContent = 'Connection error. Please try again.';
+                btn.disabled = false;
+                btn.textContent = '🚀 Create Account';
+            }
+        }
+
+        loadSchoolData();
+    </script>
+</body>
+</html>
