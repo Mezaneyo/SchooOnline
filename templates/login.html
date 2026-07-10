@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - MEZANEYO School</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .login-container {
+            max-width: 420px;
+            margin: 60px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .login-container .logo { text-align: center; margin-bottom: 30px; }
+        .login-container .logo h2 { color: #1a2a3a; font-size: 28px; }
+        .login-container .logo p { color: #666; font-size: 14px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 14px; }
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: 'Poppins', sans-serif;
+            transition: border-color 0.3s;
+            background: white;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #2d6a4f;
+            box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.1);
+        }
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: #2d6a4f;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .btn-login:hover { background: #1b4332; }
+        .btn-login:disabled { background: #999; cursor: not-allowed; }
+        .signup-link { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
+        .signup-link a { color: #2d6a4f; font-weight: 600; text-decoration: none; }
+        .signup-link a:hover { text-decoration: underline; }
+        .success-msg {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            border: 1px solid #c3e6cb;
+        }
+        .error-msg {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            border: 1px solid #f5c6cb;
+        }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s ease-in-out infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 600px) { .login-container { margin: 20px; padding: 25px; } }
+        .navbar {
+            background: #1a2a3a;
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo { display: flex; align-items: center; gap: 12px; color: white; font-size: 24px; font-weight: 700; }
+        .logo span { color: #4caf50; }
+        .nav-links { display: flex; list-style: none; gap: 30px; align-items: center; }
+        .nav-links a { color: #c8d6e5; text-decoration: none; font-weight: 500; transition: color 0.3s; font-size: 15px; }
+        .nav-links a:hover { color: #4caf50; }
+        .mobile-menu { display: none; color: white; font-size: 28px; cursor: pointer; }
+        @media (max-width: 768px) {
+            .nav-links { display: none; flex-direction: column; position: absolute; top: 70px; left: 0; width: 100%; background: #1a2a3a; padding: 20px; gap: 15px; }
+            .nav-links.active { display: flex; }
+            .mobile-menu { display: block; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">🏫 <span>MEZANEYO</span></div>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/signup">Sign Up</a></li>
+            </ul>
+            <div class="mobile-menu" onclick="document.querySelector('.nav-links').classList.toggle('active')">☰</div>
+        </div>
+    </nav>
+
+    <div class="login-container">
+        <div class="logo">
+            <h2>🔐 Welcome Back</h2>
+            <p>Sign in to your MEZANEYO account</p>
+        </div>
+
+        <div id="successMsg" class="success-msg">✅ <span id="successText">Success!</span></div>
+        <div id="errorMsg" class="error-msg">❌ <span id="errorText">Error message</span></div>
+
+        <form id="loginForm" onsubmit="return false;">
+            <div class="form-group">
+                <label>Email Address <span class="required">*</span></label>
+                <input type="email" id="email" placeholder="you@mezaneyo.school" required>
+                <div class="error-text" id="emailError" style="color:#dc3545;font-size:12px;display:none;">Please enter a valid email address</div>
+            </div>
+
+            <div class="form-group">
+                <label>Password <span class="required">*</span></label>
+                <input type="password" id="password" placeholder="Enter your password" required>
+                <div class="error-text" id="passwordError" style="color:#dc3545;font-size:12px;display:none;">Please enter your password</div>
+            </div>
+
+            <button type="submit" class="btn-login" id="loginBtn" onclick="handleLogin()">
+                🔐 Sign In
+            </button>
+        </form>
+
+        <div class="signup-link">
+            Don't have an account? <a href="/signup">Create one here</a>
+        </div>
+    </div>
+
+    <script>
+        async function handleLogin() {
+            var email = document.getElementById('email').value.trim();
+            var password = document.getElementById('password').value;
+
+            document.getElementById('successMsg').style.display = 'none';
+            document.getElementById('errorMsg').style.display = 'none';
+
+            var hasError = false;
+
+            if (!email || !email.includes('@')) {
+                document.getElementById('emailError').style.display = 'block';
+                document.getElementById('email').style.borderColor = '#dc3545';
+                hasError = true;
+            } else {
+                document.getElementById('emailError').style.display = 'none';
+                document.getElementById('email').style.borderColor = '#e0e0e0';
+            }
+
+            if (!password) {
+                document.getElementById('passwordError').style.display = 'block';
+                document.getElementById('password').style.borderColor = '#dc3545';
+                hasError = true;
+            } else {
+                document.getElementById('passwordError').style.display = 'none';
+                document.getElementById('password').style.borderColor = '#e0e0e0';
+            }
+
+            if (hasError) return;
+
+            var btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Signing in...';
+
+            try {
+                var response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email, password: password })
+                });
+
+                var data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('successMsg').style.display = 'block';
+                    document.getElementById('successText').textContent = '✅ Welcome back, ' + data.user.full_name + '! Redirecting...';
+
+                    setTimeout(function() {
+                        var role = data.user.role || 'student';
+                        if (role === 'admin') window.location.href = '/admin-dashboard';
+                        else if (role === 'teacher') window.location.href = '/teacher-dashboard';
+                        else window.location.href = '/student-dashboard';
+                    }, 1500);
+                } else {
+                    document.getElementById('errorMsg').style.display = 'block';
+                    document.getElementById('errorText').textContent = data.error || 'Invalid credentials';
+                    btn.disabled = false;
+                    btn.innerHTML = '🔐 Sign In';
+                }
+            } catch (error) {
+                document.getElementById('errorMsg').style.display = 'block';
+                document.getElementById('errorText').textContent = 'Connection error. Please try again.';
+                btn.disabled = false;
+                btn.innerHTML = '🔐 Sign In';
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') handleLogin();
+        });
+    </script>
+</body>
+</html>
