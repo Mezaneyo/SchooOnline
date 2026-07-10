@@ -57,10 +57,11 @@
         .btn-warning { background: #ffc107; color: #333; }
         .btn-sm { padding: 4px 12px; font-size: 12px; }
         .btn-primary { background: #007bff; }
+        .btn-success { background: #28a745; }
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             gap: 15px;
             margin: 20px 0;
         }
@@ -96,11 +97,7 @@
             font-size: 11px;
             animation: pulse 1.5s infinite;
         }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 
         .menu-toggle {
             display: none;
@@ -171,25 +168,19 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        .lesson-card {
+        .lesson-card, .assignment-card, .quiz-card, .forum-card {
             border: 1px solid #eee;
             border-radius: 8px;
             padding: 15px;
             margin-bottom: 12px;
         }
-        .lesson-card h4 { margin-bottom: 5px; }
-        .lesson-card .meta { color: #666; font-size: 12px; }
-        .lesson-card .material-link {
-            display: inline-block;
-            background: #e9ecef;
-            padding: 2px 10px;
-            border-radius: 4px;
-            margin: 3px 5px 3px 0;
-            font-size: 12px;
-            text-decoration: none;
-            color: #2d6a4f;
-        }
-        .lesson-card .material-link:hover { background: #d4edda; }
+        .lesson-card h4, .assignment-card h4, .quiz-card h4, .forum-card h4 { margin-bottom: 5px; }
+        .lesson-card .meta, .assignment-card .meta, .quiz-card .meta, .forum-card .meta { color: #666; font-size: 12px; }
+
+        .badge-present { background: #d4edda; color: #155724; padding: 3px 10px; border-radius: 20px; font-size: 11px; }
+        .badge-absent { background: #f8d7da; color: #721c24; padding: 3px 10px; border-radius: 20px; font-size: 11px; }
+        .badge-late { background: #fff3cd; color: #856404; padding: 3px 10px; border-radius: 20px; font-size: 11px; }
+        .badge-excused { background: #cce5ff; color: #004085; padding: 3px 10px; border-radius: 20px; font-size: 11px; }
 
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-100%); width: 280px; }
@@ -215,6 +206,8 @@
     <nav>
         <ul>
             <li class="active" onclick="showTab('dashboard')"><span class="icon">📊</span> Dashboard</li>
+            <li onclick="showTab('announcements')"><span class="icon">📢</span> Announcements</li>
+            <li onclick="showTab('messages')"><span class="icon">💬</span> Messages</li>
             <li onclick="showTab('live')"><span class="icon">📹</span> Live Classes</li>
             <li onclick="showTab('lessons')"><span class="icon">📖</span> Lessons</li>
             <li onclick="showTab('assignments')"><span class="icon">📝</span> Assignments</li>
@@ -222,6 +215,8 @@
             <li onclick="showTab('qa')"><span class="icon">❓</span> Q&A</li>
             <li onclick="showTab('forums')"><span class="icon">💬</span> Forums</li>
             <li onclick="showTab('students')"><span class="icon">👨‍🎓</span> Students</li>
+            <li onclick="showTab('attendance')"><span class="icon">📅</span> Attendance</li>
+            <li onclick="showTab('grades')"><span class="icon">📈</span> Grades</li>
             <li><a href="index.html"><span class="icon">🏠</span> Back to Site</a></li>
         </ul>
     </nav>
@@ -235,6 +230,7 @@
         </div>
         <div class="header-right">
             <span id="teacherName" style="font-weight:500;"></span>
+            <span id="teacherForm" style="font-weight:400;color:#666;font-size:13px;"></span>
             <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
         </div>
     </div>
@@ -254,6 +250,29 @@
             <h2>📋 Recent Activity</h2>
             <div id="recentActivity"><p style="color:#999;">Loading...</p></div>
         </div>
+        <div class="section">
+            <h2>📢 Recent Announcements</h2>
+            <div id="recentAnnouncements"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- ANNOUNCEMENTS -->
+    <div id="tab-announcements" class="tab-content">
+        <div class="section">
+            <div class="section-header">
+                <h2>📢 Announcements</h2>
+                <button class="btn" onclick="openModal('announcementModal')">+ Post Announcement</button>
+            </div>
+            <div id="announcementsList"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- MESSAGES -->
+    <div id="tab-messages" class="tab-content">
+        <div class="section">
+            <h2>💬 Messages from Students</h2>
+            <div id="messagesList"><p style="color:#999;">Loading...</p></div>
+        </div>
     </div>
 
     <!-- LIVE CLASSES -->
@@ -271,6 +290,10 @@
                 <button class="btn btn-primary" onclick="openModal('whiteboardModal')">+ Start Whiteboard</button>
             </div>
             <div id="whiteboardList"><p style="color:#999;">No active whiteboard sessions</p></div>
+        </div>
+        <div class="section">
+            <h2>📹 Recorded Sessions</h2>
+            <div id="recordingsList"><p style="color:#999;">No recordings saved</p></div>
         </div>
     </div>
 
@@ -333,11 +356,50 @@
             <div id="studentTable"><p style="color:#999;">Loading...</p></div>
         </div>
     </div>
+
+    <!-- ATTENDANCE -->
+    <div id="tab-attendance" class="tab-content">
+        <div class="section">
+            <h2>📅 Attendance</h2>
+            <div id="attendanceTable"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- GRADES -->
+    <div id="tab-grades" class="tab-content">
+        <div class="section">
+            <div class="section-header">
+                <h2>📈 Grades</h2>
+                <button class="btn" onclick="openModal('gradeModal')">+ Add Grade</button>
+            </div>
+            <div id="gradesTable"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
 </div>
 
 <!-- ============================================ -->
 <!-- MODALS -->
 <!-- ============================================ -->
+
+<!-- ANNOUNCEMENT MODAL -->
+<div id="announcementModal" class="modal">
+    <div class="modal-content">
+        <h2>📢 Post Announcement</h2>
+        <div class="form-group"><label>Title *</label><input type="text" id="annTitle" placeholder="Announcement title"></div>
+        <div class="form-group"><label>Content *</label><textarea id="annContent" rows="4" placeholder="Write your announcement..."></textarea></div>
+        <div class="form-group"><label>Target</label>
+            <select id="annTarget">
+                <option value="all">All Students</option>
+                <option value="class">My Class Only</option>
+            </select>
+        </div>
+        <div class="form-group"><label><input type="checkbox" id="annPinned"> 📌 Pin this announcement</label></div>
+        <div class="modal-actions">
+            <button class="btn-save" onclick="saveAnnouncement()">📤 Post</button>
+            <button class="btn-cancel" onclick="closeModal('announcementModal')">Cancel</button>
+        </div>
+    </div>
+</div>
 
 <!-- LIVE MODAL -->
 <div id="liveModal" class="modal">
@@ -386,14 +448,9 @@
         <div id="videoField" style="display:none;">
             <div class="form-group"><label>Video URL (YouTube/Vimeo)</label><input type="text" id="lessonVideo" placeholder="https://www.youtube.com/watch?v=..."></div>
         </div>
-        <div class="form-group"><label>Content / Description</label><textarea id="lessonContent" placeholder="Write your lesson content here..."></textarea></div>
-        <div class="form-group"><label>📎 Upload Files</label>
-            <input type="file" id="lessonFiles" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.gif,.mp4,.webm,.zip,.rar">
-            <div class="help-text" style="font-size:12px;color:#999;margin-top:4px;">Max 10MB per file. Supported: PDF, Word, Excel, PowerPoint, Images, Videos, ZIP</div>
-        </div>
-        <div id="fileList" style="margin-top:10px;"></div>
+        <div class="form-group"><label>Content</label><textarea id="lessonContent" rows="4" placeholder="Write your lesson content..."></textarea></div>
         <div class="modal-actions">
-            <button class="btn-save" onclick="saveLesson()">💾 Save Lesson</button>
+            <button class="btn-save" onclick="saveLesson()">💾 Save</button>
             <button class="btn-cancel" onclick="closeModal('lessonModal')">Cancel</button>
         </div>
     </div>
@@ -406,11 +463,9 @@
         <div class="form-group"><label>Class</label><select id="assignmentClass"><option>Select Class</option></select></div>
         <div class="form-group"><label>Subject</label><select id="assignmentSubject"><option>Select Subject</option></select></div>
         <div class="form-group"><label>Title</label><input type="text" id="assignmentTitle" placeholder="Assignment title"></div>
-        <div class="form-group"><label>Description</label><textarea id="assignmentDesc" placeholder="Describe the assignment..."></textarea></div>
+        <div class="form-group"><label>Description</label><textarea id="assignmentDesc" rows="3" placeholder="Describe the assignment..."></textarea></div>
         <div class="form-group"><label>Due Date</label><input type="date" id="assignmentDue"></div>
         <div class="form-group"><label>📎 Attachment URL</label><input type="text" id="assignmentAttachment" placeholder="https://example.com/file.pdf"></div>
-        <div class="form-group"><label>📎 Upload File</label><input type="file" id="assignmentFile" onchange="handleAssignmentFileUpload(event)"></div>
-        <div id="assignmentFileInfo" style="font-size:12px;color:#666;margin-top:5px;"></div>
         <div class="modal-actions">
             <button class="btn-save" onclick="saveAssignment()">💾 Save</button>
             <button class="btn-cancel" onclick="closeModal('assignmentModal')">Cancel</button>
@@ -441,12 +496,65 @@
         <h2>💬 Create Forum</h2>
         <div class="form-group"><label>Class</label><select id="forumClass"><option>Select Class</option></select></div>
         <div class="form-group"><label>Title</label><input type="text" id="forumTitle" placeholder="Forum title"></div>
-        <div class="form-group"><label>Description</label><textarea id="forumDesc" placeholder="Describe the forum..."></textarea></div>
+        <div class="form-group"><label>Description</label><textarea id="forumDesc" rows="3" placeholder="Describe the forum..."></textarea></div>
         <div class="modal-actions">
             <button class="btn-save" onclick="saveForum()">💾 Create</button>
             <button class="btn-cancel" onclick="closeModal('forumModal')">Cancel</button>
         </div>
     </div>
+</div>
+
+<!-- GRADE MODAL -->
+<div id="gradeModal" class="modal">
+    <div class="modal-content">
+        <h2>📈 Add Grade</h2>
+        <div class="form-group"><label>Student</label><select id="gStudent"><option>Select Student</option></select></div>
+        <div class="form-group"><label>Subject</label><select id="gSubject"><option>Select Subject</option></select></div>
+        <div class="form-group"><label>Score (%)</label><input type="number" id="gScore" placeholder="85" min="0" max="100"></div>
+        <div class="form-group"><label>Term</label>
+            <select id="gTerm">
+                <option value="Term 1">Term 1</option>
+                <option value="Term 2">Term 2</option>
+                <option value="Term 3">Term 3</option>
+                <option value="Final">Final</option>
+            </select>
+        </div>
+        <div class="form-group"><label>Notes</label><input type="text" id="gNotes" placeholder="Optional notes"></div>
+        <div class="modal-actions">
+            <button class="btn-save" onclick="saveGrade()">💾 Save</button>
+            <button class="btn-cancel" onclick="closeModal('gradeModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Analytics Section -->
+<div class="section">
+    <h2>📊 Class Analytics</h2>
+    <div id="analyticsContainer">Loading analytics...</div>
+</div>
+
+<!-- Attendance Summary -->
+<div class="section">
+    <h2>📅 Today's Attendance</h2>
+    <div id="attendanceSummary">Loading...</div>
+</div>
+
+<!-- Assignment Completion -->
+<div class="section">
+    <h2>📝 Assignment Completion</h2>
+    <div id="assignmentCompletion">Loading...</div>
+</div>
+
+<!-- Upcoming Classes -->
+<div class="section">
+    <h2>📅 Upcoming Live Classes</h2>
+    <div id="upcomingClasses">Loading...</div>
+</div>
+
+<!-- Pending Submissions -->
+<div class="section">
+    <h2>📝 Pending Submissions</h2>
+    <div id="pendingSubmissions">Loading...</div>
 </div>
 
 <script>
@@ -458,8 +566,11 @@ var SUPABASE_ANON_KEY = 'sb_publishable_kwF_yAmJ5AWnbaIe57snrw_fXng7-6a';
 var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 var teacherId = null;
+var teacherData = null;
+var teacherClassId = null;
+var teacherFormId = null;
 var activeTab = 'dashboard';
-var uploadedFiles = [];
+var authUserId = null;
 
 // =============================================
 // TOGGLE SIDEBAR
@@ -484,9 +595,10 @@ function closeSidebar() {
 // ENSURE TEACHER RECORD EXISTS
 // =============================================
 async function ensureTeacherRecord(userId, email, fullName) {
+    // Check if teacher exists
     var { data: existingTeacher, error: checkError } = await supabaseClient
         .from('teachers')
-        .select('id')
+        .select('*')
         .eq('auth_user_id', userId)
         .maybeSingle();
     
@@ -496,9 +608,10 @@ async function ensureTeacherRecord(userId, email, fullName) {
     }
     
     if (existingTeacher) {
-        return existingTeacher.id;
+        return existingTeacher;
     }
     
+    // Create teacher record
     var teacherData = {
         auth_user_id: userId,
         full_name: fullName || 'Teacher',
@@ -519,7 +632,7 @@ async function ensureTeacherRecord(userId, email, fullName) {
         return null;
     }
     
-    return newTeacher.id;
+    return newTeacher;
 }
 
 // =============================================
@@ -529,19 +642,48 @@ async function checkAuth() {
     var { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) { window.location.href = 'login.html'; return; }
     var user = session.user;
+    authUserId = user.id;
     var role = user.user_metadata?.role || 'student';
+    
     if (role !== 'teacher') {
         window.location.href = role + '-dashboard.html';
         return;
     }
-    document.getElementById('teacherName').textContent = user.user_metadata?.full_name || user.email;
     
-    teacherId = await ensureTeacherRecord(user.id, user.email, user.user_metadata?.full_name);
+    var fullName = user.user_metadata?.full_name || user.email;
+    document.getElementById('teacherName').textContent = fullName;
     
-    if (!teacherId) {
+    // Ensure teacher record exists
+    var teacherResult = await ensureTeacherRecord(user.id, user.email, fullName);
+    
+    if (!teacherResult) {
         showError('Could not find or create teacher record. Please contact admin.');
         return;
     }
+    
+    teacherData = teacherResult;
+    teacherId = teacherResult.id;
+    
+    // Get teacher's class assignment from teacher_classes
+    var { data: classData, error: classError } = await supabaseClient
+        .from('teacher_classes')
+        .select('*, classes(id, class_name, form_id)')
+        .eq('teacher_id', teacherId)
+        .maybeSingle();
+    
+    if (classError) {
+        console.warn('No class assigned to teacher:', classError);
+        document.getElementById('teacherForm').textContent = '📚 No class assigned';
+    } else if (classData) {
+        teacherClassId = classData.class_id;
+        teacherFormId = classData.classes?.form_id || null;
+        var formName = classData.classes?.class_name || 'N/A';
+        document.getElementById('teacherForm').textContent = '📚 ' + formName;
+    } else {
+        document.getElementById('teacherForm').textContent = '📚 No class assigned';
+    }
+    
+    console.log('✅ Teacher loaded:', teacherData.full_name, 'Class:', teacherClassId, 'Form:', teacherFormId);
     
     loadClassesAndSubjects();
     loadDashboard();
@@ -563,7 +705,7 @@ async function loadClassesAndSubjects() {
         }
     });
     
-    ['liveSubject', 'lessonSubject', 'assignmentSubject', 'quizSubject', 'wbSubject'].forEach(function(id) {
+    ['liveSubject', 'lessonSubject', 'assignmentSubject', 'quizSubject', 'wbSubject', 'gSubject'].forEach(function(id) {
         var sel = document.getElementById(id);
         if (sel && subjects) {
             sel.innerHTML = '<option value="">Select Subject</option>' + 
@@ -579,7 +721,7 @@ function showTab(tab) {
     activeTab = tab;
     document.querySelectorAll('.sidebar nav ul li').forEach(function(el) { el.classList.remove('active'); });
     var items = document.querySelectorAll('.sidebar nav ul li');
-    var tabs = ['dashboard','live','lessons','assignments','quizzes','qa','forums','students'];
+    var tabs = ['dashboard','announcements','messages','live','lessons','assignments','quizzes','qa','forums','students','attendance','grades'];
     var idx = tabs.indexOf(tab);
     if (items[idx]) items[idx].classList.add('active');
     
@@ -589,24 +731,32 @@ function showTab(tab) {
     
     var titles = {
         dashboard: '📊 Dashboard',
+        announcements: '📢 Announcements',
+        messages: '💬 Messages',
         live: '📹 Live Classes',
         lessons: '📖 Lessons',
         assignments: '📝 Assignments',
         quizzes: '🧪 Quizzes',
         qa: '❓ Q&A',
         forums: '💬 Forums',
-        students: '👨‍🎓 Students'
+        students: '👨‍🎓 Students',
+        attendance: '📅 Attendance',
+        grades: '📈 Grades'
     };
     document.getElementById('pageTitle').textContent = titles[tab] || 'Dashboard';
     closeSidebar();
     
-    if (tab === 'live') { loadLives(); loadWhiteboardSessions(); }
+    if (tab === 'announcements') loadAnnouncements();
+    else if (tab === 'messages') loadMessages();
+    else if (tab === 'live') { loadLives(); loadWhiteboardSessions(); loadRecordings(); }
     else if (tab === 'lessons') loadLessons();
     else if (tab === 'assignments') loadAssignments();
     else if (tab === 'quizzes') loadQuizzes();
     else if (tab === 'qa') loadQA();
     else if (tab === 'forums') loadForums();
     else if (tab === 'students') loadStudents();
+    else if (tab === 'attendance') loadAttendance();
+    else if (tab === 'grades') loadGrades();
 }
 
 // =============================================
@@ -614,9 +764,15 @@ function showTab(tab) {
 // =============================================
 async function loadDashboard() {
     try {
-        var { data: students } = await supabaseClient.from('students').select('*');
+        // Get students from the teacher's class
+        var studentsQuery = supabaseClient.from('students').select('*');
+        if (teacherClassId) {
+            studentsQuery = studentsQuery.eq('class_id', teacherClassId);
+        }
+        var { data: students } = await studentsQuery;
         document.getElementById('totalStudents').textContent = students?.length || 0;
         
+        // Today's attendance
         var today = new Date().toISOString().split('T')[0];
         var { data: attendance } = await supabaseClient.from('attendance').select('*').eq('date', today);
         var present = 0;
@@ -628,35 +784,222 @@ async function loadDashboard() {
         var total = attendance?.length || 1;
         document.getElementById('todayAttendance').textContent = Math.round((present / total) * 100) + '%';
         
+        // Assignments
         var { data: assignments } = await supabaseClient.from('assignments').select('*').eq('teacher_id', teacherId);
         document.getElementById('pendingAssignments').textContent = assignments?.length || 0;
         
+        // Live sessions
         var { data: lives } = await supabaseClient.from('live_classes').select('*').eq('teacher_id', teacherId).eq('is_active', true);
         document.getElementById('liveSessions').textContent = lives?.length || 0;
+        
+        // Recent announcements
+        loadRecentAnnouncements();
     } catch (error) {
         console.error('Dashboard error:', error);
     }
 }
 
 // =============================================
+// LOAD RECENT ANNOUNCEMENTS
+// =============================================
+async function loadRecentAnnouncements() {
+    var container = document.getElementById('recentAnnouncements');
+    try {
+        var { data, error } = await supabaseClient
+            .from('announcements')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(3);
+        
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+            var html = '';
+            for (var i = 0; i < data.length; i++) {
+                var a = data[i];
+                html += `
+                    <div class="announcement ${a.is_pinned ? 'pinned' : ''}">
+                        <div class="title">${a.is_pinned ? '📌 ' : ''}${a.title}</div>
+                        <div style="color:#444;font-size:13px;margin-top:4px;">${a.content.substring(0, 100)}${a.content.length > 100 ? '...' : ''}</div>
+                        <div class="meta">${a.author_name || 'Admin'} • ${new Date(a.created_at).toLocaleDateString()}</div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = '<p style="color:#999;">No announcements yet.</p>';
+        }
+    } catch (error) {
+        container.innerHTML = '<p style="color:#999;">Error loading announcements.</p>';
+    }
+}
+
+// =============================================
+// LOAD ANNOUNCEMENTS
+// =============================================
+async function loadAnnouncements() {
+    try {
+        var { data, error } = await supabaseClient
+            .from('announcements')
+            .select('*')
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        var container = document.getElementById('announcementsList');
+        if (data && data.length > 0) {
+            var html = '';
+            for (var i = 0; i < data.length; i++) {
+                var a = data[i];
+                html += `
+                    <div class="announcement ${a.is_pinned ? 'pinned' : ''}">
+                        <div class="title">${a.is_pinned ? '📌 ' : ''}${a.title}</div>
+                        <div style="color:#444;font-size:14px;margin-top:5px;">${a.content}</div>
+                        <div class="meta">${a.author_name || 'Admin'} • ${new Date(a.created_at).toLocaleString()}</div>
+                        ${a.author_id === authUserId ? `<button class="btn btn-danger btn-sm" onclick="deleteAnnouncement('${a.id}')" style="margin-top:5px;">Delete</button>` : ''}
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = '<p style="color:#999;padding:20px;text-align:center;">No announcements yet.</p>';
+        }
+    } catch (error) {
+        console.error('Announcements error:', error);
+        document.getElementById('announcementsList').innerHTML = '<p style="color:#999;">Error loading announcements.</p>';
+    }
+}
+
+async function deleteAnnouncement(id) {
+    if (!confirm('Delete this announcement?')) return;
+    var { error } = await supabaseClient.from('announcements').delete().eq('id', id);
+    if (error) return showError(error.message);
+    showSuccess('Announcement deleted');
+    loadAnnouncements();
+    loadRecentAnnouncements();
+}
+
+// =============================================
+// SAVE ANNOUNCEMENT
+// =============================================
+async function saveAnnouncement() {
+    var title = document.getElementById('annTitle').value.trim();
+    var content = document.getElementById('annContent').value.trim();
+    var target = document.getElementById('annTarget').value;
+    var pinned = document.getElementById('annPinned').checked;
+    
+    if (!title || !content) {
+        showError('Title and content are required');
+        return;
+    }
+    
+    try {
+        var { error } = await supabaseClient
+            .from('announcements')
+            .insert([{
+                title: title,
+                content: content,
+                author_id: authUserId,
+                author_name: teacherData.full_name,
+                author_role: 'teacher',
+                target_type: target,
+                is_pinned: pinned
+            }]);
+        
+        if (error) throw error;
+        
+        showSuccess('✅ Announcement posted!');
+        closeModal('announcementModal');
+        loadAnnouncements();
+        loadRecentAnnouncements();
+    } catch (error) {
+        showError('Error posting announcement: ' + error.message);
+    }
+}
+
+// =============================================
+// MESSAGES
+// =============================================
+async function loadMessages() {
+    try {
+        var query = supabaseClient
+            .from('messages')
+            .select('*')
+            .order('created_at', { ascending: false });
+        
+        if (teacherClassId) {
+            query = query.eq('class_id', teacherClassId);
+        }
+        
+        var { data, error } = await query;
+        
+        if (error) throw error;
+        
+        var container = document.getElementById('messagesList');
+        if (data && data.length > 0) {
+            var html = '';
+            for (var i = 0; i < data.length; i++) {
+                var m = data[i];
+                var isUnread = !m.is_read && m.receiver_id === authUserId;
+                html += `
+                    <div class="message-item ${isUnread ? 'unread' : ''}">
+                        <div class="sender">${m.sender_role === 'student' ? '👨‍🎓' : '👨‍🏫'} ${m.sender_name || 'Student'}</div>
+                        <div style="color:#444;font-size:14px;margin:4px 0;">${m.message}</div>
+                        <div class="time">${new Date(m.created_at).toLocaleString()}</div>
+                        ${isUnread ? '<button class="btn btn-sm btn-success" onclick="markMessageRead(\'' + m.id + '\')" style="margin-top:4px;">Mark Read</button>' : ''}
+                        <button class="btn btn-sm btn-primary" onclick="replyToMessage('${m.sender_id}', '${m.sender_name}')" style="margin-top:4px;">Reply</button>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = '<p style="color:#999;padding:20px;text-align:center;">No messages from students.</p>';
+        }
+    } catch (error) {
+        console.error('Messages error:', error);
+        document.getElementById('messagesList').innerHTML = '<p style="color:#999;">Error loading messages.</p>';
+    }
+}
+
+async function markMessageRead(id) {
+    var { error } = await supabaseClient.from('messages').update({ is_read: true }).eq('id', id);
+    if (error) return showError(error.message);
+    loadMessages();
+}
+
+function replyToMessage(studentId, studentName) {
+    var reply = prompt('Reply to ' + studentName + ':');
+    if (reply && reply.trim()) {
+        sendReply(studentId, studentName, reply.trim());
+    }
+}
+
+async function sendReply(studentId, studentName, message) {
+    try {
+        var { error } = await supabaseClient
+            .from('messages')
+            .insert([{
+                sender_id: authUserId,
+                sender_name: teacherData.full_name,
+                sender_role: 'teacher',
+                receiver_id: studentId,
+                receiver_role: 'student',
+                class_id: teacherClassId,
+                message: message,
+                is_read: false
+            }]);
+        
+        if (error) throw error;
+        showSuccess('✅ Reply sent!');
+        loadMessages();
+    } catch (error) {
+        showError('Error sending reply: ' + error.message);
+    }
+}
+
+// =============================================
 // LESSON FUNCTIONS
 // =============================================
-document.getElementById('lessonFiles')?.addEventListener('change', function(e) {
-    var fileList = document.getElementById('fileList');
-    uploadedFiles = [];
-    fileList.innerHTML = '';
-    
-    for (var i = 0; i < this.files.length; i++) {
-        var file = this.files[i];
-        if (file.size > 10 * 1024 * 1024) {
-            showError('File "' + file.name + '" is too large (max 10MB)');
-            continue;
-        }
-        uploadedFiles.push(file);
-        fileList.innerHTML += '<div style="background:#e9ecef;padding:4px 10px;border-radius:4px;margin:4px 0;font-size:13px;">📎 ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)</div>';
-    }
-});
-
 function toggleLessonFields() {
     var type = document.getElementById('lessonType').value;
     document.getElementById('videoField').style.display = (type === 'video' || type === 'mixed') ? 'block' : 'none';
@@ -675,31 +1018,15 @@ async function saveLesson() {
         return;
     }
     
-    var fileUrls = [];
-    for (var i = 0; i < uploadedFiles.length; i++) {
-        var file = uploadedFiles[i];
-        var reader = new FileReader();
-        var fileData = await new Promise(function(resolve) {
-            reader.onload = function(e) { resolve(e.target.result); };
-            reader.readAsDataURL(file);
-        });
-        fileUrls.push({
-            name: file.name,
-            type: file.type,
-            size: file.size,
-            data: fileData
-        });
-    }
-    
     var data = {
         teacher_id: teacherId,
         class_id: classId,
         subject_id: subjectId,
+        form_id: teacherFormId,
         title: title,
         content: content || null,
         lesson_type: type,
         video_url: video || null,
-        attachments: fileUrls.length > 0 ? fileUrls : null,
         is_published: true
     };
     
@@ -708,8 +1035,6 @@ async function saveLesson() {
         if (error) throw error;
         showSuccess('✅ Lesson created!');
         closeModal('lessonModal');
-        uploadedFiles = [];
-        document.getElementById('fileList').innerHTML = '';
         loadLessons();
     } catch (error) {
         showError(error.message);
@@ -718,7 +1043,11 @@ async function saveLesson() {
 
 async function loadLessons() {
     if (!teacherId) { return; }
-    var { data, error } = await supabaseClient.from('lessons').select('*').eq('teacher_id', teacherId).order('created_at', { ascending: false });
+    var { data, error } = await supabaseClient
+        .from('lessons')
+        .select('*, subjects(name)')
+        .eq('teacher_id', teacherId)
+        .order('created_at', { ascending: false });
     if (error) return showError(error.message);
     
     var container = document.getElementById('lessonList');
@@ -726,25 +1055,11 @@ async function loadLessons() {
         var html = '';
         for (var i = 0; i < data.length; i++) {
             var l = data[i];
-            html += '<div class="lesson-card"><h4>' + l.title + '</h4>';
-            html += '<div class="meta">' + (l.lesson_type || 'text') + ' • Class: ' + (l.class_id || 'N/A') + '</div>';
-            if (l.content) html += '<div style="margin-top:5px; color:#444;">' + l.content.substring(0, 150) + '</div>';
-            if (l.video_url) html += '<div style="margin-top:5px;">🎥 <a href="' + l.video_url + '" target="_blank">Watch Video</a></div>';
-            
-            if (l.attachments) {
-                var attachments = typeof l.attachments === 'string' ? JSON.parse(l.attachments) : l.attachments;
-                if (attachments && attachments.length > 0) {
-                    html += '<div style="margin-top:5px;">📎 Files: ';
-                    for (var j = 0; j < attachments.length; j++) {
-                        var file = attachments[j];
-                        var fileName = file.name || 'file-' + (j+1);
-                        html += '<span class="material-link">📄 ' + fileName + '</span> ';
-                    }
-                    html += '</div>';
-                }
-            }
-            
-            html += '<div style="margin-top:8px;"><button class="btn btn-danger btn-sm" onclick="deleteLesson(\'' + l.id + '\')">Delete</button></div></div>';
+            html += `<div class="lesson-card"><h4>${l.title}</h4>`;
+            html += `<div class="meta">${l.lesson_type || 'text'} • ${l.subjects?.name || 'N/A'}</div>`;
+            if (l.content) html += `<div style="margin-top:5px;color:#444;">${l.content.substring(0, 150)}</div>`;
+            if (l.video_url) html += `<div style="margin-top:5px;">🎥 <a href="${l.video_url}" target="_blank" class="video-link">Watch Video</a></div>`;
+            html += `<div style="margin-top:8px;"><button class="btn btn-danger btn-sm" onclick="deleteLesson('${l.id}')">Delete</button></div></div>`;
         }
         container.innerHTML = html;
     } else {
@@ -814,7 +1129,11 @@ async function endLive(id) {
 
 async function loadLives() {
     if (!teacherId) { return; }
-    var { data, error } = await supabaseClient.from('live_classes').select('*').eq('teacher_id', teacherId).order('created_at', { ascending: false });
+    var { data, error } = await supabaseClient
+        .from('live_classes')
+        .select('*')
+        .eq('teacher_id', teacherId)
+        .order('created_at', { ascending: false });
     if (error) return showError(error.message);
     
     var container = document.getElementById('liveList');
@@ -822,14 +1141,14 @@ async function loadLives() {
         var html = '';
         for (var i = 0; i < data.length; i++) {
             var l = data[i];
-            html += '<div style="padding:12px; border:1px solid #eee; border-radius:8px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">';
-            html += '<div><strong>' + l.title + '</strong> ' + (l.is_active ? '<span class="live-badge">🔴 LIVE</span>' : '<span style="color:#999;">Ended</span>');
-            html += '<div style="color:#666; font-size:12px;">' + new Date(l.scheduled_at).toLocaleString() + '</div></div>';
+            html += `<div style="padding:12px;border:1px solid #eee;border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">`;
+            html += `<div><strong>${l.title}</strong> ${l.is_active ? '<span class="live-badge">🔴 LIVE</span>' : '<span style="color:#999;">Ended</span>'}`;
+            html += `<div style="color:#666;font-size:12px;">${new Date(l.scheduled_at).toLocaleString()}</div></div>`;
             if (l.is_active) {
-                html += '<div><button class="btn btn-sm" onclick="joinLive(\'' + l.room_id + '\')">Join</button>';
-                html += '<button class="btn btn-danger btn-sm" onclick="endLive(\'' + l.id + '\')">End</button></div>';
+                html += `<div><button class="btn btn-sm" onclick="joinLive('${l.room_id}')">Join</button>`;
+                html += `<button class="btn btn-danger btn-sm" onclick="endLive('${l.id}')">End</button></div>`;
             }
-            html += '</div>';
+            html += `</div>`;
         }
         container.innerHTML = html;
     } else {
@@ -873,19 +1192,10 @@ async function startWhiteboard() {
         showSuccess('🖊️ Whiteboard session started!');
         closeModal('whiteboardModal');
         
-        var { data: teacher } = await supabaseClient
-            .from('teachers')
-            .select('full_name')
-            .eq('id', teacherId)
-            .single();
-        
-        var teacherName = teacher?.full_name || 'Teacher';
-        
-        var url = 'whiteboard.html?room=' + sessionCode + '&session=' + session.id + '&role=teacher&name=' + encodeURIComponent(teacherName);
+        var url = 'whiteboard.html?room=' + sessionCode + '&session=' + session.id + '&role=teacher&name=' + encodeURIComponent(teacherData.full_name);
         window.open(url, '_blank', 'width=1200,height=800');
         
         loadWhiteboardSessions();
-        
     } catch (error) {
         showError('Error starting whiteboard: ' + error.message);
     }
@@ -933,97 +1243,144 @@ async function loadWhiteboardSessions() {
 }
 
 function joinWhiteboard(sessionCode, sessionId, role) {
-    var teacherName = document.getElementById('teacherName').textContent || 'Teacher';
-    var url = 'whiteboard.html?room=' + sessionCode + '&session=' + sessionId + '&role=' + role + '&name=' + encodeURIComponent(teacherName);
+    var url = 'whiteboard.html?room=' + sessionCode + '&session=' + sessionId + '&role=' + role + '&name=' + encodeURIComponent(teacherData.full_name);
     window.open(url, '_blank', 'width=1200,height=800');
 }
 
 async function endWhiteboard(sessionId) {
     if (!confirm('End this whiteboard session?')) return;
-    
     var { error } = await supabaseClient
         .from('interactive_sessions')
-        .update({ 
-            is_active: false, 
-            ended_at: new Date().toISOString() 
-        })
+        .update({ is_active: false, ended_at: new Date().toISOString() })
         .eq('id', sessionId);
-    
-    if (error) {
-        showError('Error ending session: ' + error.message);
-        return;
-    }
-    
+    if (error) return showError(error.message);
     showSuccess('Whiteboard session ended');
     loadWhiteboardSessions();
 }
+
+
+
 // =============================================
-// LOAD RECORDED WHITEBOARDS
+// LOAD RECORDINGS - Teacher (With Video Playback)
 // =============================================
-async function loadRecordedWhiteboards() {
-    if (!teacherId) return;
-    
+async function loadRecordings() {
     var { data, error } = await supabaseClient
         .from('recorded_whiteboards')
-        .select('*')
+        .select('*, interactive_sessions(session_name)')
         .order('recorded_at', { ascending: false })
-        .limit(10);
+        .limit(20);
     
     if (error) {
-        console.error('Error loading recordings:', error);
+        console.error('Recordings error:', error);
+        document.getElementById('recordingsList').innerHTML = '<p style="color:#999;">Error loading recordings.</p>';
         return;
     }
     
     var container = document.getElementById('recordingsList');
-    if (!container) return;
-    
     if (data && data.length > 0) {
         var html = '';
         for (var i = 0; i < data.length; i++) {
             var r = data[i];
+            var sessionName = r.interactive_sessions?.session_name || 'Recording';
             var date = new Date(r.recorded_at).toLocaleDateString();
             var time = new Date(r.recorded_at).toLocaleTimeString();
+            
+            var hasVideo = r.recording_url && (
+                r.recording_url.includes('youtube.com') ||
+                r.recording_url.includes('vimeo.com') ||
+                r.recording_url.includes('.mp4') ||
+                r.recording_url.includes('meet.jit.si')
+            );
+            
             html += `
-                <div style="padding:10px;border:1px solid #eee;border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-                    <div>
-                        <strong>📹 Recording</strong>
-                        <div style="color:#666;font-size:12px;">Room: ${r.room_id} • ${date} at ${time}</div>
-                        ${r.image_url ? `<img src="${r.image_url}" style="max-width:100px;max-height:50px;border-radius:4px;margin-top:4px;">` : ''}
+                <div style="padding:12px;border:1px solid #eee;border-radius:8px;margin-bottom:10px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                        <div>
+                            <strong>📹 ${sessionName}</strong>
+                            <div style="color:#666;font-size:12px;">${date} at ${time}</div>
+                            ${r.recording_url ? `<div style="color:#999;font-size:11px;word-break:break-all;">🔗 ${r.recording_url}</div>` : ''}
+                        </div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            ${r.recording_url ? `
+                                <button class="btn btn-sm btn-primary" onclick="playRecordingTeacher('${r.recording_url}')">▶️ Play</button>
+                                <button class="btn btn-sm btn-success" onclick="window.open('${r.recording_url}','_blank')">📤 Open</button>
+                            ` : ''}
+                            ${r.image_url ? `<button class="btn btn-sm btn-warning" onclick="window.open('${r.image_url}','_blank')">🖼️ View Image</button>` : ''}
+                            <button class="btn btn-sm btn-danger" onclick="deleteRecording('${r.id}')">🗑️</button>
+                        </div>
                     </div>
-                    <div>
-                        ${r.image_url ? `<button class="btn btn-sm btn-primary" onclick="viewRecording('${r.image_url}')">👁️ View</button>` : ''}
-                        <button class="btn btn-sm btn-danger" onclick="deleteRecording('${r.id}')">🗑️</button>
-                    </div>
+                    ${r.recording_url && !r.recording_url.includes('youtube.com') && !r.recording_url.includes('vimeo.com') ? `
+                        <div style="margin-top:10px;background:#f8f9fa;border-radius:6px;padding:8px;">
+                            <video controls style="width:100%;max-height:200px;border-radius:6px;" preload="metadata">
+                                <source src="${r.recording_url}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                    ` : ''}
+                    ${r.recording_url && (r.recording_url.includes('youtube.com') || r.recording_url.includes('vimeo.com')) ? `
+                        <div style="margin-top:10px;">
+                            <a href="${r.recording_url}" target="_blank" class="btn btn-sm btn-primary">▶️ Watch on YouTube/Vimeo</a>
+                        </div>
+                    ` : ''}
+                    ${r.image_url && !r.recording_url ? `
+                        <div style="margin-top:10px;">
+                            <img src="${r.image_url}" style="max-width:100%;max-height:150px;border-radius:6px;border:1px solid #eee;">
+                        </div>
+                    ` : ''}
                 </div>
             `;
         }
         container.innerHTML = html;
     } else {
-        container.innerHTML = '<p style="color:#999;">No recordings saved yet.</p>';
+        container.innerHTML = '<p style="color:#999;padding:20px;text-align:center;">No recordings saved yet.</p>';
     }
 }
-
-function viewRecording(imageUrl) {
-    window.open(imageUrl, '_blank');
-}
-
-async function deleteRecording(id) {
-    if (!confirm('Delete this recording?')) return;
-    var { error } = await supabaseClient
-        .from('recorded_whiteboards')
-        .delete()
-        .eq('id', id);
-    if (error) {
-        showError('Error deleting recording: ' + error.message);
-        return;
-    }
-    showSuccess('Recording deleted');
-    loadRecordedWhiteboards();
-}
-
 
 // =============================================
-// ASSIGNMENT FUNCTIONS
+// PLAY RECORDING - Teacher Full Screen
+// =============================================
+function playRecordingTeacher(url) {
+    if (url.includes('youtube.com') || url.includes('vimeo.com')) {
+        window.open(url, '_blank');
+        return;
+    }
+    
+    var modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center;
+        z-index: 9999; padding: 20px;
+    `;
+    
+    modal.innerHTML = `
+        <div style="position:relative;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+            <video controls style="width:100%;max-width:800px;max-height:80vh;border-radius:8px;" autoplay>
+                <source src="${url}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <button onclick="this.parentElement.parentElement.remove()" 
+                    style="position:absolute;top:20px;right:20px;background:#dc3545;color:white;border:none;
+                           padding:10px 20px;border-radius:6px;cursor:pointer;font-size:16px;">
+                ✕ Close
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+// =============================================
+// DELETE RECORDING
+// =============================================
+async function deleteRecording(id) {
+    if (!confirm('Delete this recording?')) return;
+    var { error } = await supabaseClient.from('recorded_whiteboards').delete().eq('id', id);
+    if (error) return showError(error.message);
+    showSuccess('Recording deleted');
+    loadRecordings();
+}
+// =============================================
+// ASSIGNMENTS
 // =============================================
 async function saveAssignment() {
     var classId = document.getElementById('assignmentClass').value;
@@ -1032,27 +1389,10 @@ async function saveAssignment() {
     var desc = document.getElementById('assignmentDesc').value.trim();
     var dueDate = document.getElementById('assignmentDue').value;
     var attachment = document.getElementById('assignmentAttachment').value.trim();
-    var fileInput = document.getElementById('assignmentFile');
     
     if (!classId || !subjectId || !title || !dueDate) {
         showError('All fields are required');
         return;
-    }
-    
-    var attachmentUrl = attachment || null;
-    
-    if (fileInput && fileInput.files && fileInput.files.length > 0) {
-        var file = fileInput.files[0];
-        if (file.size > 10 * 1024 * 1024) {
-            showError('File too large (max 10MB)');
-            return;
-        }
-        var reader = new FileReader();
-        var fileData = await new Promise(function(resolve) {
-            reader.onload = function(e) { resolve(e.target.result); };
-            reader.readAsDataURL(file);
-        });
-        attachmentUrl = fileData;
     }
     
     try {
@@ -1063,7 +1403,7 @@ async function saveAssignment() {
             title: title,
             description: desc || null,
             due_date: dueDate,
-            attachment_url: attachmentUrl
+            attachment_url: attachment || null
         }]);
         if (error) throw error;
         showSuccess('✅ Assignment created!');
@@ -1075,17 +1415,13 @@ async function saveAssignment() {
     }
 }
 
-function handleAssignmentFileUpload(event) {
-    var file = event.target.files[0];
-    if (file) {
-        document.getElementById('assignmentFileInfo').textContent = '📎 Selected: ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
-        document.getElementById('assignmentAttachment').value = '';
-    }
-}
-
 async function loadAssignments() {
     if (!teacherId) { return; }
-    var { data, error } = await supabaseClient.from('assignments').select('*').eq('teacher_id', teacherId).order('created_at', { ascending: false });
+    var { data, error } = await supabaseClient
+        .from('assignments')
+        .select('*, subjects(name)')
+        .eq('teacher_id', teacherId)
+        .order('created_at', { ascending: false });
     if (error) return showError(error.message);
     
     var container = document.getElementById('assignmentList');
@@ -1093,18 +1429,11 @@ async function loadAssignments() {
         var html = '';
         for (var i = 0; i < data.length; i++) {
             var a = data[i];
-            html += '<div class="lesson-card"><h4>' + a.title + '</h4>';
-            html += '<div class="meta">📅 Due: ' + new Date(a.due_date).toLocaleDateString() + ' • Class: ' + (a.class_id || 'N/A') + '</div>';
-            if (a.description) html += '<div style="margin-top:5px; color:#444;">' + a.description + '</div>';
-            if (a.attachment_url) {
-                var isBase64 = a.attachment_url.startsWith('data:');
-                if (isBase64) {
-                    html += '<div style="margin-top:5px;">📎 <a href="' + a.attachment_url + '" download target="_blank">Download Attachment</a></div>';
-                } else {
-                    html += '<div style="margin-top:5px;">📎 <a href="' + a.attachment_url + '" target="_blank">Open Attachment</a></div>';
-                }
-            }
-            html += '<div style="margin-top:8px;"><button class="btn btn-danger btn-sm" onclick="deleteAssignment(\'' + a.id + '\')">Delete</button></div></div>';
+            html += `<div class="assignment-card"><h4>${a.title}</h4>`;
+            html += `<div class="meta">📅 Due: ${new Date(a.due_date).toLocaleDateString()} • ${a.subjects?.name || 'N/A'}</div>`;
+            if (a.description) html += `<div style="margin-top:5px;color:#444;">${a.description}</div>`;
+            if (a.attachment_url) html += `<div style="margin-top:5px;">📎 <a href="${a.attachment_url}" target="_blank" class="file-link">View Attachment</a></div>`;
+            html += `<div style="margin-top:8px;"><button class="btn btn-danger btn-sm" onclick="deleteAssignment('${a.id}')">Delete</button></div></div>`;
         }
         container.innerHTML = html;
     } else {
@@ -1122,7 +1451,7 @@ async function deleteAssignment(id) {
 }
 
 // =============================================
-// QUIZ FUNCTIONS
+// QUIZZES
 // =============================================
 async function saveQuiz() {
     var classId = document.getElementById('quizClass').value;
@@ -1144,13 +1473,17 @@ async function saveQuiz() {
     }
     
     try {
-        var { data: quiz, error: quizError } = await supabaseClient.from('quizzes').insert([{
-            teacher_id: teacherId,
-            class_id: classId,
-            subject_id: subjectId,
-            title: title,
-            is_published: true
-        }]).select().single();
+        var { data: quiz, error: quizError } = await supabaseClient
+            .from('quizzes')
+            .insert([{
+                teacher_id: teacherId,
+                class_id: classId,
+                subject_id: subjectId,
+                title: title,
+                is_published: true
+            }])
+            .select()
+            .single();
         if (quizError) throw quizError;
         
         for (var i = 0; i < questions.length; i++) {
@@ -1176,7 +1509,11 @@ async function saveQuiz() {
 
 async function loadQuizzes() {
     if (!teacherId) { return; }
-    var { data, error } = await supabaseClient.from('quizzes').select('*').eq('teacher_id', teacherId).order('created_at', { ascending: false });
+    var { data, error } = await supabaseClient
+        .from('quizzes')
+        .select('*, subjects(name)')
+        .eq('teacher_id', teacherId)
+        .order('created_at', { ascending: false });
     if (error) return showError(error.message);
     
     var container = document.getElementById('quizList');
@@ -1184,9 +1521,9 @@ async function loadQuizzes() {
         var html = '';
         for (var i = 0; i < data.length; i++) {
             var q = data[i];
-            html += '<div class="lesson-card"><h4>' + q.title + '</h4>';
-            html += '<div class="meta">Class: ' + (q.class_id || 'N/A') + ' • Subject: ' + (q.subject_id || 'N/A') + '</div>';
-            html += '<div style="margin-top:8px;"><button class="btn btn-danger btn-sm" onclick="deleteQuiz(\'' + q.id + '\')">Delete</button></div></div>';
+            html += `<div class="quiz-card"><h4>${q.title}</h4>`;
+            html += `<div class="meta">${q.subjects?.name || 'N/A'}</div>`;
+            html += `<div style="margin-top:8px;"><button class="btn btn-danger btn-sm" onclick="deleteQuiz('${q.id}')">Delete</button></div></div>`;
         }
         container.innerHTML = html;
     } else {
@@ -1204,11 +1541,14 @@ async function deleteQuiz(id) {
 }
 
 // =============================================
-// Q&A FUNCTIONS
+// Q&A
 // =============================================
 async function loadQA() {
     if (!teacherId) { return; }
-    var { data, error } = await supabaseClient.from('questions').select('*').order('created_at', { ascending: false });
+    var { data, error } = await supabaseClient
+        .from('questions')
+        .select('*, students(full_name)')
+        .order('created_at', { ascending: false });
     if (error) return showError(error.message);
     
     var container = document.getElementById('qaList');
@@ -1216,15 +1556,15 @@ async function loadQA() {
         var html = '';
         for (var i = 0; i < data.length; i++) {
             var q = data[i];
-            html += '<div class="question-item"><div class="q">❓ ' + q.question + '</div>';
-            html += '<div style="font-size:12px; color:#666;">Student ID: ' + q.student_id + ' • ' + new Date(q.created_at).toLocaleDateString() + '</div>';
+            html += `<div class="question-item"><div class="q">❓ ${q.question}</div>`;
+            html += `<div style="font-size:12px;color:#666;">${q.students?.full_name || 'Student'} • ${new Date(q.created_at).toLocaleDateString()}</div>`;
             if (q.is_answered) {
-                html += '<div class="a">✅ Answered</div>';
+                html += `<div class="a">✅ Answered</div>`;
             } else {
-                html += '<div style="margin-top:8px;"><input type="text" id="answer-' + q.id + '" placeholder="Type your answer..." style="width:60%; padding:6px; border:1px solid #ddd; border-radius:4px;">';
-                html += '<button class="btn btn-sm" onclick="answerQuestion(\'' + q.id + '\')">Reply</button></div>';
+                html += `<div style="margin-top:8px;"><input type="text" id="answer-${q.id}" placeholder="Type your answer..." style="width:60%;padding:6px;border:1px solid #ddd;border-radius:4px;">`;
+                html += `<button class="btn btn-sm" onclick="answerQuestion('${q.id}')">Reply</button></div>`;
             }
-            html += '</div>';
+            html += `</div>`;
         }
         container.innerHTML = html;
     } else {
@@ -1252,7 +1592,7 @@ async function answerQuestion(questionId) {
 }
 
 // =============================================
-// FORUM FUNCTIONS
+// FORUMS
 // =============================================
 async function saveForum() {
     var classId = document.getElementById('forumClass').value;
@@ -1283,7 +1623,11 @@ async function saveForum() {
 
 async function loadForums() {
     if (!teacherId) { return; }
-    var { data, error } = await supabaseClient.from('forums').select('*').eq('teacher_id', teacherId).order('created_at', { ascending: false });
+    var { data, error } = await supabaseClient
+        .from('forums')
+        .select('*')
+        .eq('teacher_id', teacherId)
+        .order('created_at', { ascending: false });
     if (error) return showError(error.message);
     
     var container = document.getElementById('forumList');
@@ -1291,9 +1635,9 @@ async function loadForums() {
         var html = '';
         for (var i = 0; i < data.length; i++) {
             var f = data[i];
-            html += '<div class="forum-post"><div class="author">💬 ' + f.title + '</div>';
-            html += '<div class="date">' + (f.description || '') + ' • ' + new Date(f.created_at).toLocaleDateString() + '</div>';
-            html += '<div style="margin-top:8px;"><button class="btn btn-danger btn-sm" onclick="deleteForum(\'' + f.id + '\')">Delete</button></div></div>';
+            html += `<div class="forum-card"><h4>💬 ${f.title}</h4>`;
+            html += `<div class="meta">${f.description || ''} • ${new Date(f.created_at).toLocaleDateString()}</div>`;
+            html += `<div style="margin-top:8px;"><button class="btn btn-danger btn-sm" onclick="deleteForum('${f.id}')">Delete</button></div></div>`;
         }
         container.innerHTML = html;
     } else {
@@ -1313,22 +1657,179 @@ async function deleteForum(id) {
 // STUDENTS
 // =============================================
 async function loadStudents() {
-    var { data, error } = await supabaseClient.from('students').select('*').order('created_at', { ascending: false });
+    var query = supabaseClient
+        .from('students')
+        .select('*')
+        .order('full_name');
+    
+    if (teacherClassId) {
+        query = query.eq('class_id', teacherClassId);
+    }
+    
+    var { data, error } = await query;
     if (error) return showError(error.message);
     
     var container = document.getElementById('studentTable');
     if (data && data.length > 0) {
-        var html = '<table><thead><tr><th>Name</th><th>ID</th><th>Form</th><th>Guardian</th></tr></thead><tbody>';
+        var html = '<table><thead><tr><th>Name</th><th>ID</th><th>Guardian</th><th>Phone</th></tr></thead><tbody>';
         for (var i = 0; i < data.length; i++) {
             var s = data[i];
-            html += '<tr><td>' + s.full_name + '</td><td>' + (s.student_id_number || '-') + '</td>';
-            html += '<td>' + (s.class_id || '-') + '</td><td>' + (s.guardian_name || '-') + '</td></tr>';
+            html += `<tr><td>${s.full_name}</td><td>${s.student_id_number || '-'}</td>`;
+            html += `<td>${s.guardian_name || '-'}</td><td>${s.guardian_phone || '-'}</td></tr>`;
         }
         html += '</tbody></table>';
         container.innerHTML = html;
     } else {
-        container.innerHTML = '<p style="color:#999;padding:20px;text-align:center;">No students found.</p>';
+        container.innerHTML = '<p style="color:#999;padding:20px;text-align:center;">No students found in your class.</p>';
     }
+}
+
+// =============================================
+// ATTENDANCE
+// =============================================
+async function loadAttendance() {
+    var query = supabaseClient.from('students').select('*');
+    if (teacherClassId) {
+        query = query.eq('class_id', teacherClassId);
+    }
+    var { data: students } = await query;
+    
+    if (!students || students.length === 0) {
+        document.getElementById('attendanceTable').innerHTML = '<p style="color:#999;">No students found.</p>';
+        return;
+    }
+    
+    var today = new Date().toISOString().split('T')[0];
+    var container = document.getElementById('attendanceTable');
+    var html = '<table><thead><tr><th>Student</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+    
+    for (var i = 0; i < students.length; i++) {
+        var s = students[i];
+        var { data: att } = await supabaseClient
+            .from('attendance')
+            .select('*')
+            .eq('student_id', s.id)
+            .eq('date', today)
+            .maybeSingle();
+        
+        var status = att?.status || 'Not marked';
+        var statusClass = status === 'present' ? 'badge-present' : status === 'absent' ? 'badge-absent' : status === 'late' ? 'badge-late' : '';
+        
+        html += `<tr><td>${s.full_name}</td>`;
+        html += `<td><span class="${statusClass}">${status.toUpperCase()}</span></td>`;
+        html += `<td>
+            <button class="btn btn-sm btn-success" onclick="markAttendance('${s.id}','present')">✅ Present</button>
+            <button class="btn btn-sm btn-danger" onclick="markAttendance('${s.id}','absent')">❌ Absent</button>
+            <button class="btn btn-sm btn-warning" onclick="markAttendance('${s.id}','late')">⏰ Late</button>
+        </td></tr>`;
+    }
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+async function markAttendance(studentId, status) {
+    var today = new Date().toISOString().split('T')[0];
+    
+    try {
+        var { data: existing } = await supabaseClient
+            .from('attendance')
+            .select('id')
+            .eq('student_id', studentId)
+            .eq('date', today)
+            .maybeSingle();
+        
+        if (existing) {
+            await supabaseClient.from('attendance').update({ status: status }).eq('id', existing.id);
+        } else {
+            await supabaseClient.from('attendance').insert([{ student_id: studentId, date: today, status: status }]);
+        }
+        showSuccess(`Marked as ${status}!`);
+        loadAttendance();
+        loadDashboard();
+    } catch (error) {
+        showError(error.message);
+    }
+}
+
+// =============================================
+// GRADES
+// =============================================
+async function loadGrades() {
+    // Load students into dropdown
+    var query = supabaseClient.from('students').select('*');
+    if (teacherClassId) {
+        query = query.eq('class_id', teacherClassId);
+    }
+    var { data: students } = await query;
+    
+    var studentSelect = document.getElementById('gStudent');
+    if (studentSelect && students) {
+        studentSelect.innerHTML = '<option value="">Select Student</option>' + 
+            students.map(function(s) { return '<option value="' + s.id + '">' + s.full_name + '</option>'; }).join('');
+    }
+    
+    var { data, error } = await supabaseClient
+        .from('grades')
+        .select('*, students(full_name), subjects(name)')
+        .order('created_at', { ascending: false });
+    if (error) return showError(error.message);
+    
+    var container = document.getElementById('gradesTable');
+    if (data && data.length > 0) {
+        var html = '<table><thead><tr><th>Student</th><th>Subject</th><th>Score</th><th>Grade</th><th>Term</th><th>Actions</th></tr></thead><tbody>';
+        for (var i = 0; i < data.length; i++) {
+            var g = data[i];
+            var gradeLetter = g.score >= 80 ? 'A' : g.score >= 70 ? 'B' : g.score >= 60 ? 'C' : g.score >= 50 ? 'D' : 'F';
+            html += `<tr><td>${g.students?.full_name || '-'}</td>`;
+            html += `<td>${g.subjects?.name || '-'}</td>`;
+            html += `<td>${g.score || '-'}%</td>`;
+            html += `<td><strong>${gradeLetter}</strong></td>`;
+            html += `<td>${g.term || '-'}</td>`;
+            html += `<td><button class="btn btn-danger btn-sm" onclick="deleteGrade('${g.id}')">Delete</button></td></tr>`;
+        }
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    } else {
+        container.innerHTML = '<p style="color:#999;padding:20px;text-align:center;">No grades recorded yet.</p>';
+    }
+}
+
+async function saveGrade() {
+    var studentId = document.getElementById('gStudent').value;
+    var subjectId = document.getElementById('gSubject').value;
+    var score = parseFloat(document.getElementById('gScore').value);
+    var term = document.getElementById('gTerm').value;
+    var notes = document.getElementById('gNotes').value.trim();
+    
+    if (!studentId || !subjectId || isNaN(score)) {
+        showError('Student, Subject, and Score are required');
+        return;
+    }
+    
+    try {
+        var { error } = await supabaseClient.from('grades').insert([{
+            student_id: studentId,
+            subject_id: subjectId,
+            score: score,
+            term: term,
+            teacher_notes: notes || null,
+            academic_year: '2026'
+        }]);
+        if (error) throw error;
+        showSuccess('✅ Grade added!');
+        closeModal('gradeModal');
+        loadGrades();
+    } catch (error) {
+        showError(error.message);
+    }
+}
+
+async function deleteGrade(id) {
+    if (!confirm('Delete this grade?')) return;
+    var { error } = await supabaseClient.from('grades').delete().eq('id', id);
+    if (error) return showError(error.message);
+    showSuccess('Grade deleted');
+    loadGrades();
 }
 
 // =============================================
@@ -1339,8 +1840,6 @@ function openModal(id) {
     if (id === 'lessonModal') {
         document.getElementById('lessonVideo').value = '';
         document.getElementById('videoField').style.display = 'none';
-        document.getElementById('fileList').innerHTML = '';
-        uploadedFiles = [];
     }
 }
 
@@ -1398,5 +1897,263 @@ document.addEventListener('click', function(e) {
     }
 });
 </script>
+<!-- Enhancements Script -->
+<script src="script.js"></script>
+<script>
+// =============================================
+// TEACHER DASHBOARD ENHANCEMENTS
+// =============================================
+
+// Initialize features when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Get teacher data from page (you already have teacherId, teacherClassId)
+    if (typeof teacherId !== 'undefined' && teacherId) {
+        // Initialize Analytics
+        const analytics = new TeacherAnalytics();
+        analytics.init(teacherId, teacherClassId);
+        window.analytics = analytics;
+
+        // Initialize Live Class Scheduler
+        const scheduler = new LiveClassScheduler();
+        scheduler.init(teacherId);
+        window.scheduler = scheduler;
+
+        // Initialize Resource Library
+        const library = new ResourceLibrary();
+        library.init(teacherId);
+        window.library = library;
+
+        // Initialize Assignment Grader
+        const grader = new AssignmentGrader();
+        grader.init(teacherId);
+        window.grader = grader;
+
+        // Load analytics data
+        loadAnalyticsData();
+        loadUpcomingClasses();
+        loadPendingSubmissions();
+    }
+});
+
+// =============================================
+// LOAD ANALYTICS DATA
+// =============================================
+async function loadAnalyticsData() {
+    if (!window.analytics) return;
+
+    try {
+        // Get class performance
+        const performance = await window.analytics.getClassPerformance();
+        console.log('📊 Class Performance:', performance);
+
+        // Update UI with performance data
+        const container = document.getElementById('analyticsContainer');
+        if (container) {
+            container.innerHTML = `
+                <div class="analytics-grid">
+                    <div class="analytics-card">
+                        <h4>📊 Average Grade</h4>
+                        <p>${performance.totalStudents > 0 ? 
+                            Math.round(performance.students.reduce((a, b) => a + b.average, 0) / performance.students.length) : 
+                            'N/A'}%</p>
+                    </div>
+                    <div class="analytics-card">
+                        <h4>👨‍🎓 Total Students</h4>
+                        <p>${performance.totalStudents}</p>
+                    </div>
+                    <div class="analytics-card">
+                        <h4>📚 Subjects</h4>
+                        <p>${Object.keys(performance.subjectAverages || {}).length}</p>
+                    </div>
+                </div>
+                <div style="margin-top:15px;">
+                    <h5>Subject Averages</h5>
+                    ${Object.entries(performance.subjectAverages || {}).map(([subject, avg]) => 
+                        `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;">
+                            <span>${subject}</span>
+                            <span><strong>${avg}%</strong></span>
+                        </div>`
+                    ).join('')}
+                </div>
+            `;
+        }
+
+        // Get attendance summary
+        const attendance = await window.analytics.getAttendanceSummary();
+        console.log('📅 Attendance:', attendance);
+
+        // Update attendance UI
+        const attendanceContainer = document.getElementById('attendanceSummary');
+        if (attendanceContainer) {
+            attendanceContainer.innerHTML = `
+                <div style="display:flex;gap:20px;flex-wrap:wrap;">
+                    <div><strong>✅ Present:</strong> ${attendance.present}</div>
+                    <div><strong>❌ Absent:</strong> ${attendance.absent}</div>
+                    <div><strong>📊 Rate:</strong> ${attendance.rate}%</div>
+                </div>
+            `;
+        }
+
+        // Get assignment completion
+        const completion = await window.analytics.getAssignmentCompletion();
+        console.log('📝 Assignment Completion:', completion);
+
+        // Update assignment UI
+        const assignmentContainer = document.getElementById('assignmentCompletion');
+        if (assignmentContainer) {
+            assignmentContainer.innerHTML = `
+                <div><strong>📊 Completion Rate:</strong> ${completion.completionRate}%</div>
+                <div style="margin-top:8px;">
+                    ${completion.assignments.map(a => 
+                        `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f0f0f0;">
+                            <span>${a.title}</span>
+                            <span>${a.submissions} submissions</span>
+                        </div>`
+                    ).join('')}
+                </div>
+            `;
+        }
+
+    } catch (error) {
+        console.error('Error loading analytics:', error);
+    }
+}
+
+// =============================================
+// LOAD UPCOMING CLASSES
+// =============================================
+async function loadUpcomingClasses() {
+    if (!window.scheduler) return;
+
+    try {
+        const classes = await window.scheduler.getUpcomingClasses();
+        console.log('📅 Upcoming Classes:', classes);
+
+        const container = document.getElementById('upcomingClasses');
+        if (container) {
+            if (classes.length > 0) {
+                container.innerHTML = classes.map(c => `
+                    <div style="padding:10px;border:1px solid #eee;border-radius:8px;margin-bottom:8px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+                            <div>
+                                <strong>${c.title}</strong>
+                                <div style="color:#666;font-size:12px;">
+                                    📚 ${c.classes?.class_name || 'N/A'} • 📖 ${c.subjects?.name || 'N/A'}
+                                </div>
+                                <div style="color:#999;font-size:12px;">
+                                    📅 ${new Date(c.scheduled_at).toLocaleString()}
+                                </div>
+                            </div>
+                            <span style="background:#28a745;color:white;padding:2px 12px;border-radius:20px;font-size:11px;">
+                                Scheduled
+                            </span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<p style="color:#999;">No upcoming classes scheduled.</p>';
+            }
+        }
+    } catch (error) {
+        console.error('Error loading upcoming classes:', error);
+    }
+}
+
+// =============================================
+// LOAD PENDING SUBMISSIONS
+// =============================================
+async function loadPendingSubmissions() {
+    if (!window.grader || !teacherClassId) return;
+
+    try {
+        const submissions = await window.grader.getPendingSubmissions(teacherClassId);
+        console.log('📝 Pending Submissions:', submissions);
+
+        const container = document.getElementById('pendingSubmissions');
+        if (container) {
+            if (submissions.length > 0) {
+                container.innerHTML = submissions.map(s => `
+                    <div style="padding:10px;border:1px solid #eee;border-radius:8px;margin-bottom:8px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+                            <div>
+                                <strong>${s.students?.full_name || 'Student'}</strong>
+                                <div style="color:#666;font-size:12px;">
+                                    📝 ${s.assignments?.title || 'Assignment'} • 
+                                    📅 ${new Date(s.submitted_at).toLocaleDateString()}
+                                </div>
+                            </div>
+                            <div>
+                                <button class="btn btn-sm btn-primary" onclick="gradeSubmission('${s.id}')">
+                                    Grade
+                                </button>
+                            </div>
+                        </div>
+                        ${s.submission_url ? `<div style="margin-top:5px;font-size:12px;color:#999;">
+                            📎 <a href="${s.submission_url}" target="_blank">View Submission</a>
+                        </div>` : ''}
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<p style="color:#999;">No pending submissions.</p>';
+            }
+        }
+    } catch (error) {
+        console.error('Error loading pending submissions:', error);
+    }
+}
+
+// =============================================
+// GRADE SUBMISSION
+// =============================================
+async function gradeSubmission(submissionId) {
+    const score = prompt('Enter score (0-100):');
+    if (score === null) return;
+    
+    const parsedScore = parseFloat(score);
+    if (isNaN(parsedScore) || parsedScore < 0 || parsedScore > 100) {
+        notifications.add({
+            message: '❌ Invalid score. Please enter 0-100.',
+            type: 'error'
+        });
+        return;
+    }
+
+    const feedback = prompt('Enter feedback (optional):');
+    
+    await window.grader.gradeAssignment(submissionId, parsedScore, feedback || '');
+    loadPendingSubmissions();
+}
+
+// =============================================
+// ADD CSS FOR ANALYTICS CARDS
+// =============================================
+const style = document.createElement('style');
+style.textContent = `
+    .analytics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    .analytics-card {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+    }
+    .analytics-card h4 {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 5px;
+    }
+    .analytics-card p {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1a2a3a;
+    }
+`;
+document.head.appendChild(style);
+</script>
+
 </body>
 </html>

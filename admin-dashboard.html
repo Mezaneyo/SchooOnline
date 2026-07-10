@@ -57,10 +57,11 @@
         .btn-warning { background: #ffc107; color: #333; }
         .btn-sm { padding: 4px 12px; font-size: 12px; }
         .btn-primary { background: #007bff; }
+        .btn-success { background: #28a745; }
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             gap: 15px;
             margin: 20px 0;
         }
@@ -99,7 +100,6 @@
             cursor: pointer;
             z-index: 1001;
         }
-
         .overlay {
             display: none;
             position: fixed;
@@ -157,6 +157,27 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
+        .announcement {
+            border-left: 4px solid #2d6a4f;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        .announcement .title { font-weight: 600; }
+        .announcement .meta { color: #666; font-size: 12px; }
+        .announcement.pinned { border-left-color: #ffc107; background: #fff8e1; }
+
+        .role-badge {
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .role-badge.admin { background: #dc3545; color: white; }
+        .role-badge.teacher { background: #ffc107; color: #333; }
+        .role-badge.student { background: #17a2b8; color: white; }
+
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-100%); width: 280px; }
             .sidebar.open { transform: translateX(0); }
@@ -165,7 +186,6 @@
             .menu-toggle { display: inline-block; }
             .sidebar:not(.open) { transform: translateX(-100%); }
         }
-
         @media (max-width: 480px) {
             .stats-grid { grid-template-columns: 1fr; }
             .header { flex-direction: column; align-items: flex-start; }
@@ -182,11 +202,11 @@
     <nav>
         <ul>
             <li class="active" onclick="showTab('dashboard')"><span class="icon">📊</span> Dashboard</li>
+            <li onclick="showTab('announcements')"><span class="icon">📢</span> Announcements</li>
             <li onclick="showTab('students')"><span class="icon">👨‍🎓</span> Students</li>
             <li onclick="showTab('teachers')"><span class="icon">👨‍🏫</span> Teachers</li>
             <li onclick="showTab('classes')"><span class="icon">📚</span> Classes</li>
             <li onclick="showTab('subjects')"><span class="icon">📖</span> Subjects</li>
-            <li onclick="showTab('attendance')"><span class="icon">📅</span> Attendance</li>
             <li onclick="showTab('users')"><span class="icon">👤</span> Users</li>
             <li><a href="index.html"><span class="icon">🏠</span> Back to Site</a></li>
         </ul>
@@ -219,6 +239,21 @@
         <div class="section">
             <h2>📋 Recent Activity</h2>
             <div id="recentActivity"><p style="color:#999;">Loading...</p></div>
+        </div>
+        <div class="section">
+            <h2>📢 Latest Announcements</h2>
+            <div id="latestAnnouncements"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- ANNOUNCEMENTS -->
+    <div id="tab-announcements" class="tab-content">
+        <div class="section">
+            <div class="section-header">
+                <h2>📢 All Announcements</h2>
+                <button class="btn" onclick="openModal('announcementModal')">+ Post Announcement</button>
+            </div>
+            <div id="announcementsList"><p style="color:#999;">Loading...</p></div>
         </div>
     </div>
 
@@ -266,19 +301,39 @@
         </div>
     </div>
 
-    <!-- ATTENDANCE -->
-    <div id="tab-attendance" class="tab-content">
-        <div class="section">
-            <h2>📅 Attendance Records</h2>
-            <div id="attendanceTable"><p style="color:#999;">Loading...</p></div>
-        </div>
-    </div>
-
     <!-- USERS -->
     <div id="tab-users" class="tab-content">
         <div class="section">
-            <h2>👤 System Users</h2>
+            <div class="section-header">
+                <h2>👤 System Users</h2>
+                <button class="btn btn-primary" onclick="loadUsers()">🔄 Refresh</button>
+            </div>
             <div id="userTable"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- MODALS -->
+<!-- ============================================ -->
+
+<!-- ANNOUNCEMENT MODAL -->
+<div id="announcementModal" class="modal">
+    <div class="modal-content">
+        <h2>📢 Post Announcement</h2>
+        <div class="form-group"><label>Title *</label><input type="text" id="annTitle" placeholder="Announcement title"></div>
+        <div class="form-group"><label>Content *</label><textarea id="annContent" rows="4" placeholder="Write your announcement..."></textarea></div>
+        <div class="form-group"><label>Target</label>
+            <select id="annTarget">
+                <option value="all">All Users</option>
+                <option value="students">Students Only</option>
+                <option value="teachers">Teachers Only</option>
+            </select>
+        </div>
+        <div class="form-group"><label><input type="checkbox" id="annPinned"> 📌 Pin this announcement</label></div>
+        <div class="modal-actions">
+            <button class="btn-save" onclick="saveAnnouncement()">📤 Post</button>
+            <button class="btn-cancel" onclick="closeModal('announcementModal')">Cancel</button>
         </div>
     </div>
 </div>
@@ -289,8 +344,15 @@
         <h2 id="studentModalTitle">➕ Add Student</h2>
         <input type="hidden" id="editStudentId">
         <div class="form-group"><label>Full Name *</label><input type="text" id="sFullName" placeholder="e.g., Chimwemwe Banda"></div>
-        <div class="form-group"><label>Student ID *</label><input type="text" id="sStudentId" placeholder="e.g., MEZ-001"></div>
-        <div class="form-group"><label>Class</label><select id="sClass"><option value="">Select Class</option></select></div>
+        <div class="form-group"><label>Student ID *</label>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="sStudentId" placeholder="e.g., MEZ-2026-001" style="flex:1;">
+                <button class="btn btn-sm btn-primary" onclick="generateStudentId()">🎲 Generate</button>
+            </div>
+        </div>
+        <div class="form-group"><label>Class</label>
+            <select id="sClass"><option value="">Select Class</option></select>
+        </div>
         <div class="form-group"><label>Guardian Name</label><input type="text" id="sGuardian" placeholder="e.g., John Banda"></div>
         <div class="form-group"><label>Guardian Phone</label><input type="text" id="sPhone" placeholder="e.g., +265 888 123 456"></div>
         <div class="form-group"><label>Guardian Email</label><input type="email" id="sEmail" placeholder="guardian@example.com"></div>
@@ -308,8 +370,13 @@
         <input type="hidden" id="editTeacherId">
         <div class="form-group"><label>Full Name *</label><input type="text" id="tFullName" placeholder="e.g., Mr. John Doe"></div>
         <div class="form-group"><label>Email *</label><input type="email" id="tEmail" placeholder="teacher@mezaneyo.school"></div>
-        <div class="form-group"><label>Subject Specialty</label><input type="text" id="tSubject" placeholder="e.g., Mathematics"></div>
+        <div class="form-group"><label>Subject Specialty</label>
+            <select id="tSubject"><option value="">Select Subject</option></select>
+        </div>
         <div class="form-group"><label>Employee ID</label><input type="text" id="tEmployeeId" placeholder="e.g., TCH-001"></div>
+        <div class="form-group"><label>Assign to Class</label>
+            <select id="tClass"><option value="">Select Class</option></select>
+        </div>
         <div class="modal-actions">
             <button class="btn-save" onclick="saveTeacher()">💾 Save</button>
             <button class="btn-cancel" onclick="closeModal('teacherModal')">Cancel</button>
@@ -323,7 +390,12 @@
         <h2>➕ Add Class</h2>
         <input type="hidden" id="editClassId">
         <div class="form-group"><label>Class Name *</label><input type="text" id="cClassName" placeholder="e.g., Form 1A"></div>
-        <div class="form-group"><label>Form</label><select id="cForm"><option value="">Select Form</option></select></div>
+        <div class="form-group"><label>Form</label>
+            <select id="cForm"><option value="">Select Form</option></select>
+        </div>
+        <div class="form-group"><label>Class Teacher</label>
+            <select id="cTeacher"><option value="">Select Teacher</option></select>
+        </div>
         <div class="form-group"><label>Academic Year</label><input type="text" id="cYear" placeholder="e.g., 2026" value="2026"></div>
         <div class="modal-actions">
             <button class="btn-save" onclick="saveClass()">💾 Save</button>
@@ -360,8 +432,8 @@ var SUPABASE_URL = 'https://nivmrwbusbeppdssmfpj.supabase.co';
 var SUPABASE_ANON_KEY = 'sb_publishable_kwF_yAmJ5AWnbaIe57snrw_fXng7-6a';
 var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-var adminId = null;
 var activeTab = 'dashboard';
+var authUserId = null;
 
 // =============================================
 // TOGGLE SIDEBAR
@@ -383,12 +455,22 @@ function closeSidebar() {
 }
 
 // =============================================
+// GENERATE STUDENT ID
+// =============================================
+function generateStudentId() {
+    var year = new Date().getFullYear();
+    var random = String(Math.floor(100 + Math.random() * 900));
+    document.getElementById('sStudentId').value = 'MEZ-' + year + '-' + random;
+}
+
+// =============================================
 // CHECK AUTH
 // =============================================
 async function checkAuth() {
     var { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) { window.location.href = 'login.html'; return; }
     var user = session.user;
+    authUserId = user.id;
     var role = user.user_metadata?.role || 'student';
     if (role !== 'admin') {
         window.location.href = role + '-dashboard.html';
@@ -397,6 +479,7 @@ async function checkAuth() {
     document.getElementById('adminName').textContent = user.user_metadata?.full_name || user.email;
     
     loadDashboard();
+    loadLatestAnnouncements();
 }
 
 // =============================================
@@ -406,7 +489,7 @@ function showTab(tab) {
     activeTab = tab;
     document.querySelectorAll('.sidebar nav ul li').forEach(function(el) { el.classList.remove('active'); });
     var items = document.querySelectorAll('.sidebar nav ul li');
-    var tabs = ['dashboard','students','teachers','classes','subjects','attendance','users'];
+    var tabs = ['dashboard','announcements','students','teachers','classes','subjects','users'];
     var idx = tabs.indexOf(tab);
     if (items[idx]) items[idx].classList.add('active');
     
@@ -416,23 +499,65 @@ function showTab(tab) {
     
     var titles = {
         dashboard: '📊 Dashboard',
+        announcements: '📢 Announcements',
         students: '👨‍🎓 Students',
         teachers: '👨‍🏫 Teachers',
         classes: '📚 Classes',
         subjects: '📖 Subjects',
-        attendance: '📅 Attendance',
         users: '👤 Users'
     };
     document.getElementById('pageTitle').textContent = titles[tab] || 'Dashboard';
-    
     closeSidebar();
     
-    if (tab === 'students') loadStudents();
-    else if (tab === 'teachers') loadTeachers();
-    else if (tab === 'classes') loadClasses();
+    if (tab === 'announcements') loadAnnouncements();
+    else if (tab === 'students') { loadClassesDropdown('sClass'); loadStudents(); }
+    else if (tab === 'teachers') { loadSubjectsDropdown('tSubject'); loadClassesDropdown('tClass'); loadTeachers(); }
+    else if (tab === 'classes') { loadFormsDropdown('cForm'); loadTeachersDropdown('cTeacher'); loadClasses(); }
     else if (tab === 'subjects') loadSubjects();
-    else if (tab === 'attendance') loadAttendance();
     else if (tab === 'users') loadUsers();
+}
+
+// =============================================
+// LOAD DROPDOWNS
+// =============================================
+async function loadClassesDropdown(id) {
+    var { data, error } = await supabaseClient.from('classes').select('id, class_name');
+    if (error) return;
+    var sel = document.getElementById(id);
+    if (sel) {
+        sel.innerHTML = '<option value="">Select Class</option>' + 
+            data.map(function(c) { return '<option value="' + c.id + '">' + c.class_name + '</option>'; }).join('');
+    }
+}
+
+async function loadSubjectsDropdown(id) {
+    var { data, error } = await supabaseClient.from('subjects').select('id, name');
+    if (error) return;
+    var sel = document.getElementById(id);
+    if (sel) {
+        sel.innerHTML = '<option value="">Select Subject</option>' + 
+            data.map(function(s) { return '<option value="' + s.id + '">' + s.name + '</option>'; }).join('');
+    }
+}
+
+async function loadFormsDropdown(id) {
+    var { data, error } = await supabaseClient.from('forms').select('id, name');
+    if (error) return;
+    var sel = document.getElementById(id);
+    if (sel) {
+        sel.innerHTML = '<option value="">Select Form</option>' + 
+            data.map(function(f) { return '<option value="' + f.id + '">' + f.name + '</option>'; }).join('');
+    }
+}
+
+async function loadTeachersDropdown(id) {
+    var { data, error } = await supabaseClient.from('teachers').select('id, full_name');
+    if (error) return;
+    var sel = document.getElementById(id);
+    if (sel) {
+        sel.innerHTML = '<option value="">Select Teacher</option>' + 
+            data.map(function(t) { return '<option value="' + t.id + '">' + t.full_name + '</option>'; }).join('');
+    }
 }
 
 // =============================================
@@ -450,26 +575,136 @@ async function loadDashboard() {
         document.getElementById('totalClasses').textContent = classes || 0;
         document.getElementById('totalSubjects').textContent = subjects || 0;
         
-        var container = document.getElementById('recentActivity');
-        container.innerHTML = '<p style="color:#999;">Welcome to MEZANEYO Admin Dashboard</p>';
+        document.getElementById('recentActivity').innerHTML = 
+            '<p style="color:#999;">Welcome to MEZANEYO Admin Dashboard</p>';
     } catch (error) {
         console.error('Dashboard error:', error);
     }
 }
 
 // =============================================
-// LOAD STUDENTS
+// LOAD LATEST ANNOUNCEMENTS
 // =============================================
-async function loadStudents() {
-    // Load classes for dropdown
-    var { data: classes } = await supabaseClient.from('classes').select('id, class_name');
-    var classSelect = document.getElementById('sClass');
-    if (classSelect && classes) {
-        classSelect.innerHTML = '<option value="">Select Class</option>' + 
-            classes.map(function(c) { return '<option value="' + c.id + '">' + c.class_name + '</option>'; }).join('');
+async function loadLatestAnnouncements() {
+    try {
+        var { data, error } = await supabaseClient
+            .from('announcements')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(3);
+        
+        if (error) throw error;
+        
+        var container = document.getElementById('latestAnnouncements');
+        if (data && data.length > 0) {
+            var html = '';
+            for (var i = 0; i < data.length; i++) {
+                var a = data[i];
+                html += `
+                    <div class="announcement ${a.is_pinned ? 'pinned' : ''}">
+                        <div class="title">${a.is_pinned ? '📌 ' : ''}${a.title}</div>
+                        <div style="color:#444;font-size:13px;margin-top:4px;">${a.content.substring(0, 100)}${a.content.length > 100 ? '...' : ''}</div>
+                        <div class="meta">${a.author_name || 'Admin'} • ${new Date(a.created_at).toLocaleDateString()}</div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = '<p style="color:#999;">No announcements yet.</p>';
+        }
+    } catch (error) {
+        console.error('Announcements error:', error);
+    }
+}
+
+// =============================================
+// ANNOUNCEMENTS CRUD
+// =============================================
+async function saveAnnouncement() {
+    var title = document.getElementById('annTitle').value.trim();
+    var content = document.getElementById('annContent').value.trim();
+    var target = document.getElementById('annTarget').value;
+    var pinned = document.getElementById('annPinned').checked;
+    
+    if (!title || !content) {
+        showError('Title and content are required');
+        return;
     }
     
-    var { data, error } = await supabaseClient.from('students').select('*').order('created_at', { ascending: false });
+    try {
+        var { error } = await supabaseClient
+            .from('announcements')
+            .insert([{
+                title: title,
+                content: content,
+                author_id: authUserId,
+                author_name: document.getElementById('adminName').textContent || 'Admin',
+                author_role: 'admin',
+                target_type: target,
+                is_pinned: pinned
+            }]);
+        
+        if (error) throw error;
+        
+        showSuccess('✅ Announcement posted!');
+        closeModal('announcementModal');
+        loadAnnouncements();
+        loadLatestAnnouncements();
+    } catch (error) {
+        showError('Error posting announcement: ' + error.message);
+    }
+}
+
+async function loadAnnouncements() {
+    try {
+        var { data, error } = await supabaseClient
+            .from('announcements')
+            .select('*')
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        var container = document.getElementById('announcementsList');
+        if (data && data.length > 0) {
+            var html = '';
+            for (var i = 0; i < data.length; i++) {
+                var a = data[i];
+                html += `
+                    <div class="announcement ${a.is_pinned ? 'pinned' : ''}">
+                        <div class="title">${a.is_pinned ? '📌 ' : ''}${a.title}</div>
+                        <div style="color:#444;font-size:14px;margin-top:5px;">${a.content}</div>
+                        <div class="meta">${a.author_name || 'Admin'} • ${new Date(a.created_at).toLocaleString()} • Target: ${a.target_type || 'all'}</div>
+                        <button class="btn btn-danger btn-sm" onclick="deleteAnnouncement('${a.id}')" style="margin-top:5px;">Delete</button>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = '<p style="color:#999;padding:20px;text-align:center;">No announcements yet.</p>';
+        }
+    } catch (error) {
+        console.error('Announcements error:', error);
+        document.getElementById('announcementsList').innerHTML = '<p style="color:#999;">Error loading announcements.</p>';
+    }
+}
+
+async function deleteAnnouncement(id) {
+    if (!confirm('Delete this announcement?')) return;
+    var { error } = await supabaseClient.from('announcements').delete().eq('id', id);
+    if (error) return showError(error.message);
+    showSuccess('Announcement deleted');
+    loadAnnouncements();
+    loadLatestAnnouncements();
+}
+
+// =============================================
+// STUDENT CRUD
+// =============================================
+async function loadStudents() {
+    var { data, error } = await supabaseClient
+        .from('students')
+        .select('*, classes(class_name)')
+        .order('created_at', { ascending: false });
     if (error) return showError(error.message);
     
     var container = document.getElementById('studentTable');
@@ -477,11 +712,11 @@ async function loadStudents() {
         var html = '<table><thead><tr><th>Name</th><th>ID</th><th>Class</th><th>Guardian</th><th>Phone</th><th>Actions</th></tr></thead><tbody>';
         for (var i = 0; i < data.length; i++) {
             var s = data[i];
-            html += '<tr><td>' + s.full_name + '</td><td>' + (s.student_id_number || '-') + '</td>';
-            html += '<td>' + (s.class_id || '-') + '</td><td>' + (s.guardian_name || '-') + '</td>';
-            html += '<td>' + (s.guardian_phone || '-') + '</td>';
-            html += '<td><button class="btn btn-warning btn-sm" onclick="editStudent(\'' + s.id + '\')">✏️</button> ';
-            html += '<button class="btn btn-danger btn-sm" onclick="deleteStudent(\'' + s.id + '\')">🗑️</button></td></tr>';
+            html += `<tr><td>${s.full_name}</td><td>${s.student_id_number || '-'}</td>`;
+            html += `<td>${s.classes?.class_name || '-'}</td><td>${s.guardian_name || '-'}</td>`;
+            html += `<td>${s.guardian_phone || '-'}</td>`;
+            html += `<td><button class="btn btn-warning btn-sm" onclick="editStudent('${s.id}')">✏️</button> `;
+            html += `<button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">🗑️</button></td></tr>`;
         }
         html += '</tbody></table>';
         container.innerHTML = html;
@@ -490,9 +725,6 @@ async function loadStudents() {
     }
 }
 
-// =============================================
-// SAVE STUDENT
-// =============================================
 async function saveStudent() {
     var id = document.getElementById('editStudentId').value;
     var fullName = document.getElementById('sFullName').value.trim();
@@ -533,9 +765,6 @@ async function saveStudent() {
     }
 }
 
-// =============================================
-// EDIT STUDENT
-// =============================================
 async function editStudent(id) {
     var { data, error } = await supabaseClient.from('students').select('*').eq('id', id).single();
     if (error) return showError(error.message);
@@ -551,9 +780,6 @@ async function editStudent(id) {
     openModal('studentModal');
 }
 
-// =============================================
-// DELETE STUDENT
-// =============================================
 async function deleteStudent(id) {
     if (!confirm('Delete this student?')) return;
     var { error } = await supabaseClient.from('students').delete().eq('id', id);
@@ -564,21 +790,26 @@ async function deleteStudent(id) {
 }
 
 // =============================================
-// LOAD TEACHERS
+// TEACHER CRUD
 // =============================================
 async function loadTeachers() {
-    var { data, error } = await supabaseClient.from('teachers').select('*').order('created_at', { ascending: false });
+    var { data, error } = await supabaseClient
+        .from('teachers')
+        .select('*, teacher_classes(class_id), classes(class_name)')
+        .order('created_at', { ascending: false });
     if (error) return showError(error.message);
     
     var container = document.getElementById('teacherTable');
     if (data && data.length > 0) {
-        var html = '<table><thead><tr><th>Name</th><th>Email</th><th>Subject</th><th>Employee ID</th><th>Actions</th></tr></thead><tbody>';
+        var html = '<table><thead><tr><th>Name</th><th>Email</th><th>Subject</th><th>Employee ID</th><th>Class</th><th>Actions</th></tr></thead><tbody>';
         for (var i = 0; i < data.length; i++) {
             var t = data[i];
-            html += '<tr><td>' + t.full_name + '</td><td>' + t.email + '</td>';
-            html += '<td>' + (t.subject_specialty || '-') + '</td><td>' + (t.employee_id || '-') + '</td>';
-            html += '<td><button class="btn btn-warning btn-sm" onclick="editTeacher(\'' + t.id + '\')">✏️</button> ';
-            html += '<button class="btn btn-danger btn-sm" onclick="deleteTeacher(\'' + t.id + '\')">🗑️</button></td></tr>';
+            var className = t.classes?.class_name || '-';
+            html += `<tr><td>${t.full_name}</td><td>${t.email}</td>`;
+            html += `<td>${t.subject_specialty || '-'}</td><td>${t.employee_id || '-'}</td>`;
+            html += `<td>${className}</td>`;
+            html += `<td><button class="btn btn-warning btn-sm" onclick="editTeacher('${t.id}')">✏️</button> `;
+            html += `<button class="btn btn-danger btn-sm" onclick="deleteTeacher('${t.id}')">🗑️</button></td></tr>`;
         }
         html += '</tbody></table>';
         container.innerHTML = html;
@@ -587,36 +818,65 @@ async function loadTeachers() {
     }
 }
 
-// =============================================
-// SAVE TEACHER
-// =============================================
 async function saveTeacher() {
     var id = document.getElementById('editTeacherId').value;
     var fullName = document.getElementById('tFullName').value.trim();
     var email = document.getElementById('tEmail').value.trim();
-    var subject = document.getElementById('tSubject').value.trim();
+    var subject = document.getElementById('tSubject').value;
     var employeeId = document.getElementById('tEmployeeId').value.trim();
+    var classId = document.getElementById('tClass').value;
     
     if (!fullName || !email) {
         return showError('Name and Email are required');
     }
     
-    var data = {
-        full_name: fullName,
-        email: email,
-        subject_specialty: subject || null,
-        employee_id: employeeId || null,
-        is_active: true
-    };
-    
     try {
         var result;
         if (id) {
-            result = await supabaseClient.from('teachers').update(data).eq('id', id);
+            // Update teacher
+            result = await supabaseClient
+                .from('teachers')
+                .update({
+                    full_name: fullName,
+                    email: email,
+                    subject_specialty: subject || null,
+                    employee_id: employeeId || null
+                })
+                .eq('id', id);
+            if (result.error) throw result.error;
+            
+            // Update teacher_classes if class selected
+            if (classId) {
+                await supabaseClient
+                    .from('teacher_classes')
+                    .delete()
+                    .eq('teacher_id', id);
+                await supabaseClient
+                    .from('teacher_classes')
+                    .insert([{ teacher_id: id, class_id: classId }]);
+            }
         } else {
-            result = await supabaseClient.from('teachers').insert([data]);
+            // Insert teacher
+            result = await supabaseClient
+                .from('teachers')
+                .insert([{
+                    full_name: fullName,
+                    email: email,
+                    subject_specialty: subject || null,
+                    employee_id: employeeId || null,
+                    is_active: true
+                }])
+                .select()
+                .single();
+            if (result.error) throw result.error;
+            
+            // Assign to class
+            if (classId && result.data) {
+                await supabaseClient
+                    .from('teacher_classes')
+                    .insert([{ teacher_id: result.data.id, class_id: classId }]);
+            }
         }
-        if (result.error) throw result.error;
         
         showSuccess(id ? '✅ Teacher updated!' : '✅ Teacher added!');
         closeModal('teacherModal');
@@ -627,11 +887,12 @@ async function saveTeacher() {
     }
 }
 
-// =============================================
-// EDIT TEACHER
-// =============================================
 async function editTeacher(id) {
-    var { data, error } = await supabaseClient.from('teachers').select('*').eq('id', id).single();
+    var { data, error } = await supabaseClient
+        .from('teachers')
+        .select('*, teacher_classes(class_id)')
+        .eq('id', id)
+        .single();
     if (error) return showError(error.message);
     
     document.getElementById('editTeacherId').value = data.id;
@@ -639,14 +900,13 @@ async function editTeacher(id) {
     document.getElementById('tEmail').value = data.email;
     document.getElementById('tSubject').value = data.subject_specialty || '';
     document.getElementById('tEmployeeId').value = data.employee_id || '';
+    document.getElementById('tClass').value = data.teacher_classes?.[0]?.class_id || '';
     openModal('teacherModal');
 }
 
-// =============================================
-// DELETE TEACHER
-// =============================================
 async function deleteTeacher(id) {
     if (!confirm('Delete this teacher?')) return;
+    await supabaseClient.from('teacher_classes').delete().eq('teacher_id', id);
     var { error } = await supabaseClient.from('teachers').delete().eq('id', id);
     if (error) return showError(error.message);
     showSuccess('Teacher deleted');
@@ -655,29 +915,25 @@ async function deleteTeacher(id) {
 }
 
 // =============================================
-// LOAD CLASSES
+// CLASS CRUD
 // =============================================
 async function loadClasses() {
-    // Load forms for dropdown
-    var { data: forms } = await supabaseClient.from('forms').select('id, name');
-    var formSelect = document.getElementById('cForm');
-    if (formSelect && forms) {
-        formSelect.innerHTML = '<option value="">Select Form</option>' + 
-            forms.map(function(f) { return '<option value="' + f.id + '">' + f.name + '</option>'; }).join('');
-    }
-    
-    var { data, error } = await supabaseClient.from('classes').select('*, forms(name)').order('created_at', { ascending: false });
+    var { data, error } = await supabaseClient
+        .from('classes')
+        .select('*, forms(name), teachers(full_name)')
+        .order('created_at', { ascending: false });
     if (error) return showError(error.message);
     
     var container = document.getElementById('classTable');
     if (data && data.length > 0) {
-        var html = '<table><thead><tr><th>Class Name</th><th>Form</th><th>Academic Year</th><th>Actions</th></tr></thead><tbody>';
+        var html = '<table><thead><tr><th>Class Name</th><th>Form</th><th>Teacher</th><th>Year</th><th>Actions</th></tr></thead><tbody>';
         for (var i = 0; i < data.length; i++) {
             var c = data[i];
-            html += '<tr><td>' + c.class_name + '</td>';
-            html += '<td>' + (c.forms?.name || '-') + '</td><td>' + (c.academic_year || '-') + '</td>';
-            html += '<td><button class="btn btn-warning btn-sm" onclick="editClass(\'' + c.id + '\')">✏️</button> ';
-            html += '<button class="btn btn-danger btn-sm" onclick="deleteClass(\'' + c.id + '\')">🗑️</button></td></tr>';
+            html += `<tr><td>${c.class_name}</td>`;
+            html += `<td>${c.forms?.name || '-'}</td><td>${c.teachers?.full_name || '-'}</td>`;
+            html += `<td>${c.academic_year || '-'}</td>`;
+            html += `<td><button class="btn btn-warning btn-sm" onclick="editClass('${c.id}')">✏️</button> `;
+            html += `<button class="btn btn-danger btn-sm" onclick="deleteClass('${c.id}')">🗑️</button></td></tr>`;
         }
         html += '</tbody></table>';
         container.innerHTML = html;
@@ -686,13 +942,11 @@ async function loadClasses() {
     }
 }
 
-// =============================================
-// SAVE CLASS
-// =============================================
 async function saveClass() {
     var id = document.getElementById('editClassId').value;
     var className = document.getElementById('cClassName').value.trim();
     var formId = document.getElementById('cForm').value;
+    var teacherId = document.getElementById('cTeacher').value;
     var year = document.getElementById('cYear').value.trim();
     
     if (!className) {
@@ -702,6 +956,7 @@ async function saveClass() {
     var data = {
         class_name: className,
         form_id: formId || null,
+        class_teacher_id: teacherId || null,
         academic_year: year || null
     };
     
@@ -723,9 +978,6 @@ async function saveClass() {
     }
 }
 
-// =============================================
-// EDIT CLASS
-// =============================================
 async function editClass(id) {
     var { data, error } = await supabaseClient.from('classes').select('*').eq('id', id).single();
     if (error) return showError(error.message);
@@ -733,13 +985,11 @@ async function editClass(id) {
     document.getElementById('editClassId').value = data.id;
     document.getElementById('cClassName').value = data.class_name;
     document.getElementById('cForm').value = data.form_id || '';
+    document.getElementById('cTeacher').value = data.class_teacher_id || '';
     document.getElementById('cYear').value = data.academic_year || '';
     openModal('classModal');
 }
 
-// =============================================
-// DELETE CLASS
-// =============================================
 async function deleteClass(id) {
     if (!confirm('Delete this class?')) return;
     var { error } = await supabaseClient.from('classes').delete().eq('id', id);
@@ -750,7 +1000,7 @@ async function deleteClass(id) {
 }
 
 // =============================================
-// LOAD SUBJECTS
+// SUBJECT CRUD
 // =============================================
 async function loadSubjects() {
     var { data, error } = await supabaseClient.from('subjects').select('*').order('category', { ascending: true });
@@ -762,9 +1012,9 @@ async function loadSubjects() {
         for (var i = 0; i < data.length; i++) {
             var s = data[i];
             var badge = s.category === 'compulsory' ? '🟢' : s.category === 'optional' ? '🟡' : '🔵';
-            html += '<tr><td>' + s.name + '</td><td>' + badge + ' ' + s.category + '</td>';
-            html += '<td><button class="btn btn-warning btn-sm" onclick="editSubject(\'' + s.id + '\')">✏️</button> ';
-            html += '<button class="btn btn-danger btn-sm" onclick="deleteSubject(\'' + s.id + '\')">🗑️</button></td></tr>';
+            html += `<tr><td>${s.name}</td><td>${badge} ${s.category}</td>`;
+            html += `<td><button class="btn btn-warning btn-sm" onclick="editSubject('${s.id}')">✏️</button> `;
+            html += `<button class="btn btn-danger btn-sm" onclick="deleteSubject('${s.id}')">🗑️</button></td></tr>`;
         }
         html += '</tbody></table>';
         container.innerHTML = html;
@@ -773,9 +1023,6 @@ async function loadSubjects() {
     }
 }
 
-// =============================================
-// SAVE SUBJECT
-// =============================================
 async function saveSubject() {
     var id = document.getElementById('editSubjectId').value;
     var name = document.getElementById('subName').value.trim();
@@ -808,9 +1055,6 @@ async function saveSubject() {
     }
 }
 
-// =============================================
-// EDIT SUBJECT
-// =============================================
 async function editSubject(id) {
     var { data, error } = await supabaseClient.from('subjects').select('*').eq('id', id).single();
     if (error) return showError(error.message);
@@ -821,9 +1065,6 @@ async function editSubject(id) {
     openModal('subjectModal');
 }
 
-// =============================================
-// DELETE SUBJECT
-// =============================================
 async function deleteSubject(id) {
     if (!confirm('Delete this subject?')) return;
     var { error } = await supabaseClient.from('subjects').delete().eq('id', id);
@@ -834,50 +1075,49 @@ async function deleteSubject(id) {
 }
 
 // =============================================
-// LOAD ATTENDANCE
+// USERS
 // =============================================
-async function loadAttendance() {
-    var { data, error } = await supabaseClient.from('attendance').select('*, students(full_name)').order('date', { ascending: false }).limit(50);
-    if (error) return showError(error.message);
-    
-    var container = document.getElementById('attendanceTable');
-    if (data && data.length > 0) {
-        var html = '<table><thead><tr><th>Student</th><th>Date</th><th>Status</th></tr></thead><tbody>';
-        for (var i = 0; i < data.length; i++) {
-            var a = data[i];
-            var statusColor = a.status === 'present' ? '🟢' : a.status === 'absent' ? '🔴' : a.status === 'late' ? '🟡' : '🔵';
-            html += '<tr><td>' + (a.students?.full_name || a.student_id) + '</td>';
-            html += '<td>' + new Date(a.date).toLocaleDateString() + '</td>';
-            html += '<td>' + statusColor + ' ' + a.status + '</td></tr>';
+async function loadUsers() {
+    try {
+        var { data, error } = await supabaseClient
+            .from('users')
+            .select('*')
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        var container = document.getElementById('userTable');
+        if (data && data.length > 0) {
+            var html = '<table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Created</th><th>Actions</th></tr></thead><tbody>';
+            for (var i = 0; i < data.length; i++) {
+                var u = data[i];
+                var roleBadge = '<span class="role-badge ' + u.role + '">' + u.role + '</span>';
+                html += `<tr><td>${u.full_name}</td><td>${u.email}</td>`;
+                html += `<td>${roleBadge}</td>`;
+                html += `<td>${new Date(u.created_at).toLocaleDateString()}</td>`;
+                html += `<td><button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}', '${u.full_name}')">🗑️</button></td></tr>`;
+            }
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = '<p style="color:#999;padding:20px;text-align:center;">No users found.</p>';
         }
-        html += '</tbody></table>';
-        container.innerHTML = html;
-    } else {
-        container.innerHTML = '<p style="color:#999;padding:20px;text-align:center;">No attendance records found.</p>';
+    } catch (error) {
+        console.error('Users error:', error);
+        document.getElementById('userTable').innerHTML = '<p style="color:#999;">Error loading users.</p>';
     }
 }
 
-// =============================================
-// LOAD USERS
-// =============================================
-async function loadUsers() {
-    var { data, error } = await supabaseClient.from('users').select('*').order('created_at', { ascending: false });
-    if (error) return showError(error.message);
-    
-    var container = document.getElementById('userTable');
-    if (data && data.length > 0) {
-        var html = '<table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Created</th></tr></thead><tbody>';
-        for (var i = 0; i < data.length; i++) {
-            var u = data[i];
-            var roleBadge = u.role === 'admin' ? '🛡️' : u.role === 'teacher' ? '👨‍🏫' : '👨‍🎓';
-            html += '<tr><td>' + u.full_name + '</td><td>' + u.email + '</td>';
-            html += '<td>' + roleBadge + ' ' + u.role + '</td>';
-            html += '<td>' + new Date(u.created_at).toLocaleDateString() + '</td></tr>';
-        }
-        html += '</tbody></table>';
-        container.innerHTML = html;
-    } else {
-        container.innerHTML = '<p style="color:#999;padding:20px;text-align:center;">No users found.</p>';
+async function deleteUser(id, name) {
+    if (!confirm('Delete user "' + name + '"?')) return;
+    try {
+        var { error } = await supabaseClient.from('users').delete().eq('id', id);
+        if (error) throw error;
+        showSuccess('User deleted');
+        loadUsers();
+        loadDashboard();
+    } catch (error) {
+        showError('Error deleting user: ' + error.message);
     }
 }
 

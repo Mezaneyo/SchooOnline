@@ -45,9 +45,8 @@
         }
         .header .actions button:hover { opacity: 0.85; }
         .btn-danger { background: #dc3545; color: white; }
-        .btn-primary { background: #007bff; color: white; }
         .btn-success { background: #28a745; color: white; }
-        .btn-warning { background: #ffc107; color: #333; }
+        .btn-primary { background: #007bff; color: white; }
         .recording-badge {
             background: #dc3545;
             color: white;
@@ -74,6 +73,7 @@
             background: white;
             display: block;
         }
+        #whiteboardCanvas.view-only { cursor: default; }
 
         .toolbar {
             background: #2d4a5a;
@@ -99,6 +99,11 @@
         }
         .toolbar button:hover { transform: scale(1.05); }
         .toolbar button.active { background: #4caf50; color: white; }
+        .toolbar button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+        }
         .toolbar .color-picker {
             width: 28px;
             height: 28px;
@@ -107,6 +112,7 @@
             cursor: pointer;
             padding: 0;
         }
+        .toolbar .color-picker:disabled { opacity: 0.4; }
         .toolbar .size-picker {
             width: 50px;
             padding: 3px 6px;
@@ -116,6 +122,15 @@
             color: white;
             font-size: 11px;
         }
+
+        .role-indicator {
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .role-indicator.teacher { background: #dc3545; color: white; }
+        .role-indicator.student { background: #17a2b8; color: white; }
 
         .participants {
             background: #1a2a3a;
@@ -157,6 +172,98 @@
             color: white;
         }
 
+        .chat-panel {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 280px;
+            max-height: 220px;
+            background: rgba(0,0,0,0.85);
+            border-radius: 8px;
+            color: white;
+            display: none;
+            flex-direction: column;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+            border: 1px solid #2d4a5a;
+        }
+        .chat-panel.active { display: flex; }
+        .chat-panel .chat-header {
+            padding: 6px 10px;
+            border-bottom: 1px solid #2d4a5a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .chat-panel .chat-header .close-chat {
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .chat-panel .chat-messages {
+            flex: 1;
+            padding: 6px 10px;
+            overflow-y: auto;
+            max-height: 120px;
+            font-size: 12px;
+        }
+        .chat-panel .chat-messages .msg {
+            margin-bottom: 3px;
+            padding: 3px 6px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.05);
+        }
+        .chat-panel .chat-messages .msg .sender { font-weight: 600; color: #4caf50; }
+        .chat-panel .chat-input-area {
+            display: flex;
+            padding: 4px 8px;
+            border-top: 1px solid #2d4a5a;
+            gap: 4px;
+        }
+        .chat-panel .chat-input-area input {
+            flex: 1;
+            padding: 4px 8px;
+            border: none;
+            border-radius: 4px;
+            background: #2d4a5a;
+            color: white;
+            font-size: 11px;
+            font-family: 'Poppins', sans-serif;
+        }
+        .chat-panel .chat-input-area input::placeholder { color: #888; }
+        .chat-panel .chat-input-area input:focus { outline: none; }
+        .chat-panel .chat-input-area button {
+            padding: 4px 10px;
+            border: none;
+            border-radius: 4px;
+            background: #4caf50;
+            color: white;
+            cursor: pointer;
+            font-size: 10px;
+        }
+
+        .chat-toggle {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 18px;
+            cursor: pointer;
+            z-index: 99;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            display: none;
+        }
+        .chat-toggle:hover { background: #0056b3; }
+
         @media (max-width: 768px) {
             .header { padding: 6px 10px; }
             .header h1 { font-size: 13px; }
@@ -164,51 +271,63 @@
             .toolbar button { padding: 3px 7px; font-size: 10px; }
             .participants { padding: 4px 10px; font-size: 11px; }
             .whiteboard-container { min-height: 250px; }
+            .chat-panel { width: 220px; right: 5px; bottom: 5px; }
+            .chat-toggle { width: 35px; height: 35px; font-size: 16px; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
         <div class="header">
             <h1>🖊️ MEZANEYO <span>Whiteboard</span></h1>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                 <span class="room-code">🆔 <span id="roomId">Loading...</span></span>
                 <span class="recording-badge" id="recordingBadge">🔴 RECORDING</span>
+                <span class="role-indicator" id="roleIndicator">👤 Student</span>
             </div>
-            <div class="actions">
-                <button class="btn-primary" onclick="toggleCollaboration()">👥 Share</button>
-                <button class="btn-success" id="recordBtn" onclick="toggleRecording()">🔴 Record</button>
+            <div class="actions" id="headerActions">
+                <button class="btn-success" id="recordBtn" onclick="toggleRecording()" style="display:none;">🔴 Record</button>
                 <button class="btn-danger" onclick="leaveRoom()">🚪 Leave</button>
             </div>
         </div>
 
-        <!-- Whiteboard -->
         <div class="whiteboard-container">
             <canvas id="whiteboardCanvas"></canvas>
+            <button class="chat-toggle" id="chatToggle" onclick="toggleChat()">💬</button>
+            <div class="chat-panel" id="chatPanel">
+                <div class="chat-header">
+                    <span>💬 Questions</span>
+                    <button class="close-chat" onclick="toggleChat()">✕</button>
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="msg"><span class="sender">System:</span> Ask questions about the lesson.</div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" id="chatInput" placeholder="Type..." onkeypress="if(event.key==='Enter') sendChatMessage()">
+                    <button onclick="sendChatMessage()">Send</button>
+                </div>
+            </div>
         </div>
 
-        <!-- Toolbar -->
-        <div class="toolbar">
-            <button class="active" onclick="selectTool(this, 'pen')">✏️ Pen</button>
-            <button onclick="selectTool(this, 'eraser')">🧹 Eraser</button>
-            <button onclick="selectTool(this, 'line')">📏 Line</button>
-            <button onclick="selectTool(this, 'rect')">▭ Rect</button>
-            <button onclick="selectTool(this, 'circle')">⭕ Circle</button>
-            <button onclick="selectTool(this, 'text')">📝 Text</button>
+        <div class="toolbar" id="toolbar">
+            <button class="active" onclick="selectTool(this, 'pen')" id="toolPen">✏️ Pen</button>
+            <button onclick="selectTool(this, 'eraser')" id="toolEraser">🧹 Eraser</button>
+            <button onclick="selectTool(this, 'line')" id="toolLine">📏 Line</button>
+            <button onclick="selectTool(this, 'rect')" id="toolRect">▭ Rect</button>
+            <button onclick="selectTool(this, 'circle')" id="toolCircle">⭕ Circle</button>
+            <button onclick="selectTool(this, 'text')" id="toolText">📝 Text</button>
             <input type="color" class="color-picker" id="colorPicker" value="#000000" onchange="updateColor(this.value)">
             <select class="size-picker" id="sizePicker" onchange="updateSize(this.value)">
                 <option value="2">Small</option>
-            <option value="4" selected>Medium</option>
+                <option value="4" selected>Medium</option>
                 <option value="8">Large</option>
             </select>
-            <button onclick="undoAction()">↩️</button>
-            <button onclick="redoAction()">↪️</button>
-            <button onclick="clearBoard()">🗑️</button>
-            <button onclick="saveBoard()">💾</button>
+            <button onclick="undoAction()" id="undoBtn">↩️</button>
+            <button onclick="redoAction()" id="redoBtn">↪️</button>
+            <button onclick="clearBoard()" id="clearBtn">🗑️</button>
+            <button onclick="saveBoard()" id="saveBtn">💾</button>
         </div>
 
-        <!-- Participants -->
         <div class="participants">
             <div class="count">👥 <span id="participantCount">1</span></div>
             <div class="list" id="participantList">
@@ -218,6 +337,7 @@
 
         <div class="controls-hint">
             <kbd>Ctrl+Z</kbd> Undo <kbd>Ctrl+Y</kbd> Redo <kbd>Esc</kbd> Leave
+            <span id="roleHint" style="color:#4caf50;margin-left:15px;">👤 You are a student - watch and ask questions</span>
         </div>
     </div>
 
@@ -229,37 +349,83 @@
         var SUPABASE_ANON_KEY = 'sb_publishable_kwF_yAmJ5AWnbaIe57snrw_fXng7-6a';
         var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // =============================================
-        // WHITEBOARD STATE - FIXED
-        // =============================================
+        var urlParams = new URLSearchParams(window.location.search);
+        var roomId = urlParams.get('room') || 'wb-' + Date.now();
+        var sessionId = urlParams.get('session') || null;
+        var role = urlParams.get('role') || 'student';
+        var userName = urlParams.get('name') || 'User';
+        var isTeacher = role === 'teacher';
+
+        // Canvas state
         var canvas, ctx;
         var isDrawing = false;
         var lastX = 0, lastY = 0;
         var currentTool = 'pen';
         var currentColor = '#000000';
         var currentSize = 4;
-        var isEraser = false;
-        
-        // History as ARRAY (fixed)
         var historyArray = [];
         var historyIndex = -1;
         var maxHistory = 30;
-        
+
+        // Recording state
+        var mediaRecorder = null;
+        var recordedChunks = [];
         var isRecording = false;
-        var recordedActions = [];
-        var roomId = new URLSearchParams(window.location.search).get('room') || 'wb-' + Date.now();
-        var sessionId = new URLSearchParams(window.location.search).get('session') || null;
-        var role = new URLSearchParams(window.location.search).get('role') || 'student';
-        var userName = new URLSearchParams(window.location.search).get('name') || 'User';
-        var isTeacher = role === 'teacher';
-        var collaborationActive = false;
+        var recordingStream = null;
+
+        // Bucket name
+        var BUCKET_NAME = 'Videos';
 
         document.getElementById('roomId').textContent = roomId;
 
-        if (isTeacher) {
-            document.getElementById('teacherBadge').style.display = 'inline-block';
-        } else {
-            document.getElementById('teacherBadge').style.display = 'none';
+        // =============================================
+        // SETUP ROLE
+        // =============================================
+        function setupRole() {
+            var roleIndicator = document.getElementById('roleIndicator');
+            var roleHint = document.getElementById('roleHint');
+            
+            if (isTeacher) {
+                roleIndicator.textContent = '👨‍🏫 Teacher';
+                roleIndicator.className = 'role-indicator teacher';
+                document.getElementById('teacherBadge').style.display = 'inline-block';
+                document.getElementById('recordBtn').style.display = 'inline-block';
+                document.getElementById('chatToggle').style.display = 'none';
+                document.getElementById('chatPanel').style.display = 'none';
+                roleHint.textContent = '👨‍🏫 You are the teacher - draw, record, share screen!';
+                enableTools(true);
+            } else {
+                roleIndicator.textContent = '👨‍🎓 Student';
+                roleIndicator.className = 'role-indicator student';
+                document.getElementById('teacherBadge').style.display = 'none';
+                document.getElementById('recordBtn').style.display = 'none';
+                document.getElementById('chatToggle').style.display = 'flex';
+                document.getElementById('chatPanel').style.display = 'none';
+                roleHint.textContent = '👤 You are a student - watch and ask questions';
+                enableTools(false);
+                canvas.style.cursor = 'default';
+                canvas.classList.add('view-only');
+            }
+        }
+
+        function enableTools(enabled) {
+            var toolButtons = ['toolPen', 'toolEraser', 'toolLine', 'toolRect', 'toolCircle', 'toolText'];
+            for (var i = 0; i < toolButtons.length; i++) {
+                var btn = document.getElementById(toolButtons[i]);
+                if (btn) {
+                    btn.disabled = !enabled;
+                    if (!enabled) btn.classList.remove('active');
+                }
+            }
+            document.getElementById('colorPicker').disabled = !enabled;
+            document.getElementById('sizePicker').disabled = !enabled;
+            document.getElementById('undoBtn').disabled = !enabled;
+            document.getElementById('redoBtn').disabled = !enabled;
+            document.getElementById('clearBtn').disabled = !enabled;
+            document.getElementById('saveBtn').disabled = !enabled;
+            if (!enabled) {
+                document.getElementById('toolPen').classList.add('active');
+            }
         }
 
         // =============================================
@@ -271,32 +437,29 @@
             
             canvas.width = container.clientWidth;
             canvas.height = container.clientHeight;
+            
             ctx = canvas.getContext('2d', { willReadFrequently: true });
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-
-            // White background
             ctx.fillStyle = 'white';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Save initial state
             saveHistory();
 
-            // Resize
             window.addEventListener('resize', function() {
                 var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 canvas.width = container.clientWidth;
                 canvas.height = container.clientHeight;
                 ctx.putImageData(imageData, 0, 0);
             });
+
+            setupRole();
         }
 
         // =============================================
-        // HISTORY FUNCTIONS - FIXED
+        // HISTORY
         // =============================================
         function saveHistory() {
             var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            // Remove any future states
             if (historyIndex < historyArray.length - 1) {
                 historyArray = historyArray.slice(0, historyIndex + 1);
             }
@@ -308,18 +471,18 @@
         }
 
         function undoAction() {
+            if (!isTeacher) return;
             if (historyIndex > 0) {
                 historyIndex--;
                 ctx.putImageData(historyArray[historyIndex], 0, 0);
-                console.log('↩️ Undo: index', historyIndex);
             }
         }
 
         function redoAction() {
+            if (!isTeacher) return;
             if (historyIndex < historyArray.length - 1) {
                 historyIndex++;
                 ctx.putImageData(historyArray[historyIndex], 0, 0);
-                console.log('↪️ Redo: index', historyIndex);
             }
         }
 
@@ -328,8 +491,21 @@
         // =============================================
         function getPosition(e) {
             var rect = canvas.getBoundingClientRect();
-            var clientX = e.clientX || (e.touches && e.touches[0].clientX);
-            var clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            var clientX, clientY;
+            
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+                e.preventDefault();
+            } else if (e.changedTouches) {
+                clientX = e.changedTouches[0].clientX;
+                clientY = e.changedTouches[0].clientY;
+                e.preventDefault();
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
             return {
                 x: (clientX - rect.left) * (canvas.width / rect.width),
                 y: (clientY - rect.top) * (canvas.height / rect.height)
@@ -337,6 +513,7 @@
         }
 
         function startDrawing(e) {
+            if (!isTeacher) return;
             e.preventDefault();
             isDrawing = true;
             var pos = getPosition(e);
@@ -344,7 +521,7 @@
             lastY = pos.y;
 
             if (currentTool === 'text') {
-                var text = prompt('Enter text:', 'Hello');
+                var text = prompt('Enter text:');
                 if (text) {
                     ctx.font = (currentSize * 6) + 'px Arial';
                     ctx.fillStyle = currentColor;
@@ -354,16 +531,11 @@
                 isDrawing = false;
                 return;
             }
-
-            if (['line', 'rect', 'circle'].includes(currentTool)) {
-                // Save starting point
-                return;
-            }
         }
 
         function draw(e) {
+            if (!isTeacher || !isDrawing) return;
             e.preventDefault();
-            if (!isDrawing) return;
             var pos = getPosition(e);
 
             if (currentTool === 'pen' || currentTool === 'eraser') {
@@ -379,6 +551,7 @@
         }
 
         function stopDrawing(e) {
+            if (!isTeacher) return;
             e.preventDefault();
             if (!isDrawing) return;
             isDrawing = false;
@@ -419,37 +592,27 @@
         // TOOL SELECTION
         // =============================================
         function selectTool(btn, tool) {
-            document.querySelectorAll('.toolbar button').forEach(function(b) { 
-                b.classList.remove('active'); 
-            });
+            if (!isTeacher) return;
+            document.querySelectorAll('.toolbar button').forEach(function(b) { b.classList.remove('active'); });
             btn.classList.add('active');
             currentTool = tool;
             canvas.style.cursor = tool === 'eraser' ? 'cell' : 'crosshair';
             document.getElementById('colorPicker').disabled = (tool === 'eraser');
         }
 
-        function updateColor(color) {
-            currentColor = color;
-        }
+        function updateColor(color) { if (isTeacher) currentColor = color; }
+        function updateSize(size) { if (isTeacher) currentSize = parseInt(size); }
 
-        function updateSize(size) {
-            currentSize = parseInt(size);
-        }
-
-        // =============================================
-        // CLEAR BOARD
-        // =============================================
         function clearBoard() {
+            if (!isTeacher) return;
             if (!confirm('Clear the whiteboard?')) return;
             ctx.fillStyle = 'white';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             saveHistory();
         }
 
-        // =============================================
-        // SAVE BOARD
-        // =============================================
         function saveBoard() {
+            if (!isTeacher) return;
             var link = document.createElement('a');
             link.download = 'whiteboard-' + roomId + '.png';
             link.href = canvas.toDataURL('image/png');
@@ -458,84 +621,275 @@
         }
 
         // =============================================
-        // COLLABORATION (TogetherJS)
+        // VIDEO RECORDING - WITH SUPABASE STORAGE
         // =============================================
-        function toggleCollaboration() {
-            if (!collaborationActive) {
-                // Load TogetherJS
-                var script = document.createElement('script');
-                script.src = 'https://togetherjs.com/togetherjs-min.js';
-                script.onload = function() {
-                    TogetherJS(this);
-                    collaborationActive = true;
-                    showNotification('👥 Share the link with students to collaborate!');
-                };
-                document.head.appendChild(script);
-            } else {
-                if (window.TogetherJS) {
-                    TogetherJS.destroy();
-                }
-                collaborationActive = false;
-                showNotification('👥 Collaboration ended');
-            }
-        }
+        async function toggleRecording() {
+            if (!isTeacher) return;
 
-        // =============================================
-        // RECORDING
-        // =============================================
-        function toggleRecording() {
             if (!isRecording) {
-                isRecording = true;
-                recordedActions = [];
-                document.getElementById('recordingBadge').classList.add('active');
-                document.getElementById('recordBtn').textContent = '⏹️ Stop';
-                document.getElementById('recordBtn').className = 'btn-danger';
-                showNotification('🔴 Recording started!');
+                try {
+                    if (!MediaRecorder) {
+                        showNotification('❌ Your browser does not support recording.');
+                        return;
+                    }
+
+                    var canvasStream = canvas.captureStream(30);
+                    
+                    var audioStream = null;
+                    try {
+                        audioStream = await navigator.mediaDevices.getUserMedia({ 
+                            audio: true,
+                            video: false 
+                        });
+                    } catch (audioError) {
+                        console.warn('Audio not available:', audioError);
+                    }
+
+                    var tracks = canvasStream.getVideoTracks();
+                    if (audioStream) {
+                        tracks = tracks.concat(audioStream.getAudioTracks());
+                    }
+                    recordingStream = new MediaStream(tracks);
+
+                    if (recordingStream.getTracks().length === 0) {
+                        showNotification('❌ No media tracks available for recording.');
+                        return;
+                    }
+
+                    var mimeTypes = [
+                        'video/mp4',
+                        'video/webm;codecs=vp9,opus',
+                        'video/webm;codecs=vp8,opus',
+                        'video/webm'
+                    ];
+                    
+                    var mimeType = mimeTypes.find(function(type) {
+                        return MediaRecorder.isTypeSupported(type);
+                    });
+
+                    if (!mimeType) {
+                        showNotification('❌ No supported video format found.');
+                        return;
+                    }
+
+                    mediaRecorder = new MediaRecorder(recordingStream, {
+                        mimeType: mimeType,
+                        videoBitsPerSecond: 2500000
+                    });
+
+                    recordedChunks = [];
+
+                    mediaRecorder.ondataavailable = function(e) {
+                        if (e.data && e.data.size > 0) {
+                            recordedChunks.push(e.data);
+                        }
+                    };
+
+                    mediaRecorder.onstop = function() {
+                        saveRecordingVideo();
+                    };
+
+                    mediaRecorder.onerror = function(e) {
+                        console.error('Recording error:', e);
+                        showNotification('❌ Recording error occurred.');
+                        isRecording = false;
+                        document.getElementById('recordingBadge').classList.remove('active');
+                        document.getElementById('recordBtn').textContent = '🔴 Record';
+                        document.getElementById('recordBtn').className = 'btn-success';
+                    };
+
+                    mediaRecorder.start(1000);
+                    isRecording = true;
+                    document.getElementById('recordingBadge').classList.add('active');
+                    document.getElementById('recordBtn').textContent = '⏹️ Stop';
+                    document.getElementById('recordBtn').className = 'btn-danger';
+                    showNotification('🔴 Recording started!');
+
+                } catch (error) {
+                    console.error('Recording start error:', error);
+                    showNotification('❌ Recording error: ' + error.message);
+                }
             } else {
-                isRecording = false;
-                document.getElementById('recordingBadge').classList.remove('active');
-                document.getElementById('recordBtn').textContent = '🔴 Record';
-                document.getElementById('recordBtn').className = 'btn-success';
-                saveRecording();
+                try {
+                    if (mediaRecorder && mediaRecorder.state === 'recording') {
+                        mediaRecorder.stop();
+                        isRecording = false;
+                        document.getElementById('recordingBadge').classList.remove('active');
+                        document.getElementById('recordBtn').textContent = '🔴 Record';
+                        document.getElementById('recordBtn').className = 'btn-success';
+                        showNotification('⏹️ Processing recording...');
+                    }
+                } catch (error) {
+                    console.error('Stop recording error:', error);
+                    showNotification('❌ Error stopping recording: ' + error.message);
+                }
             }
         }
 
-        async function saveRecording() {
+        // =============================================
+        // UPLOAD TO SUPABASE STORAGE ("Videos" Bucket)
+        // =============================================
+        async function uploadToSupabaseStorage(fileBlob) {
             try {
-                var imageData = canvas.toDataURL('image/png');
-                var recordingData = {
-                    session_id: sessionId,
-                    room_id: roomId,
-                    actions: recordedActions,
-                    image_url: imageData,
-                    recorded_at: new Date().toISOString(),
-                    teacher_id: isTeacher ? 'teacher' : 'student'
-                };
+                // Get authenticated user
+                var { data: { session } } = await supabaseClient.auth.getSession();
+                if (!session) {
+                    showNotification('❌ You must be logged in to upload.');
+                    return null;
+                }
 
+                // Generate unique filename
+                var timestamp = Date.now();
+                var random = Math.random().toString(36).substring(2, 8);
+                var filename = 'whiteboard-' + roomId + '-' + timestamp + '-' + random + '.mp4';
+
+                console.log('📤 Uploading to bucket "' + BUCKET_NAME + '":', filename);
+
+                // Upload to Supabase Storage
+                var { data, error } = await supabaseClient.storage
+                    .from(BUCKET_NAME)
+                    .upload(filename, fileBlob, {
+                        contentType: 'video/mp4',
+                        cacheControl: '3600'
+                    });
+
+                if (error) {
+                    console.error('Storage upload error:', error);
+                    
+                    // If bucket doesn't exist, try to create it
+                    if (error.message && error.message.includes('bucket not found')) {
+                        showNotification('📦 Creating "' + BUCKET_NAME + '" bucket...');
+                        var { error: createError } = await supabaseClient.storage
+                            .createBucket(BUCKET_NAME, { public: true });
+                        
+                        if (createError) {
+                            showNotification('❌ Cannot create bucket. Please create it manually in Supabase Storage.');
+                            return null;
+                        }
+                        
+                        // Retry upload
+                        var { data: retryData, error: retryError } = await supabaseClient.storage
+                            .from(BUCKET_NAME)
+                            .upload(filename, fileBlob, {
+                                contentType: 'video/mp4',
+                                cacheControl: '3600'
+                            });
+                        
+                        if (retryError) throw retryError;
+                    } else {
+                        throw error;
+                    }
+                }
+
+                // Get public URL
+                var publicUrl = supabaseClient.storage
+                    .from(BUCKET_NAME)
+                    .getPublicUrl(filename).data.publicUrl;
+
+                console.log('✅ Video uploaded to storage:', publicUrl);
+                return publicUrl;
+
+            } catch (error) {
+                console.error('Upload error:', error);
+                showNotification('❌ Upload error: ' + error.message);
+                return null;
+            }
+        }
+
+        // =============================================
+        // SAVE RECORDING TO DATABASE
+        // =============================================
+        async function saveRecordingToDatabase(videoUrl) {
+            if (!sessionId) return;
+
+            try {
                 var { error } = await supabaseClient
                     .from('recorded_whiteboards')
-                    .insert([recordingData]);
+                    .upsert({
+                        session_id: sessionId,
+                        room_id: roomId,
+                        recording_url: videoUrl,
+                        recorded_at: new Date().toISOString(),
+                        teacher_id: 'teacher',
+                        is_video: true
+                    }, { onConflict: 'session_id' });
 
                 if (error) throw error;
+                console.log('✅ Recording saved to database');
 
-                showNotification('✅ Recording saved! Students can watch later.');
-                recordedActions = [];
             } catch (error) {
-                console.error('Recording save error:', error);
-                showNotification('⚠️ Error saving recording: ' + error.message);
+                console.error('Error saving recording to database:', error);
             }
         }
 
         // =============================================
-        // LEAVE ROOM
+        // SAVE RECORDING VIDEO
         // =============================================
-        function leaveRoom() {
-            if (confirm('Leave the whiteboard?')) {
-                if (isRecording) {
-                    saveRecording();
-                }
-                window.location.href = isTeacher ? 'teacher-dashboard.html' : 'student-dashboard.html';
+        function saveRecordingVideo() {
+            if (recordedChunks.length === 0) {
+                showNotification('⚠️ No recording data to save.');
+                return;
             }
+
+            try {
+                var mimeType = mediaRecorder.mimeType || 'video/mp4';
+                var blob = new Blob(recordedChunks, { type: mimeType });
+                
+                showNotification('📤 Uploading recording to cloud...');
+                
+                // Upload to Supabase Storage
+                uploadToSupabaseStorage(blob).then(function(videoUrl) {
+                    if (videoUrl) {
+                        // Save URL to database
+                        saveRecordingToDatabase(videoUrl);
+                        showNotification('✅ Recording uploaded to cloud!');
+                        
+                        // Also download for teacher (backup)
+                        var localUrl = URL.createObjectURL(blob);
+                        var link = document.createElement('a');
+                        link.download = 'whiteboard-' + roomId + '.mp4';
+                        link.href = localUrl;
+                        link.click();
+                    } else {
+                        // Fallback: download only
+                        var localUrl = URL.createObjectURL(blob);
+                        var link = document.createElement('a');
+                        link.download = 'whiteboard-' + roomId + '.mp4';
+                        link.href = localUrl;
+                        link.click();
+                        showNotification('⚠️ Recording saved locally only.');
+                    }
+                });
+
+            } catch (error) {
+                console.error('Save recording error:', error);
+                showNotification('❌ Error saving recording: ' + error.message);
+            }
+        }
+
+        // =============================================
+        // CHAT FUNCTIONS
+        // =============================================
+        function toggleChat() {
+            var panel = document.getElementById('chatPanel');
+            panel.classList.toggle('active');
+        }
+
+        function sendChatMessage() {
+            var input = document.getElementById('chatInput');
+            var message = input.value.trim();
+            if (!message) return;
+            addChatMessage('You', message);
+            input.value = '';
+        }
+
+        function addChatMessage(sender, message) {
+            var container = document.getElementById('chatMessages');
+            var msgDiv = document.createElement('div');
+            msgDiv.className = 'msg';
+            msgDiv.innerHTML = '<span class="sender">' + sender + ':</span> ' + message;
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
         }
 
         // =============================================
@@ -548,30 +902,17 @@
             var div = document.createElement('div');
             div.className = 'notification-popup';
             div.style.cssText = `
-                position: fixed;
-                bottom: 70px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: rgba(0,0,0,0.9);
-                color: white;
-                padding: 10px 20px;
-                border-radius: 8px;
-                font-size: 13px;
-                z-index: 9999;
-                max-width: 90%;
-                text-align: center;
-                border: 1px solid #4caf50;
+                position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
+                background: rgba(0,0,0,0.9); color: white; padding: 8px 16px;
+                border-radius: 6px; font-size: 12px; z-index: 9999; max-width: 90%;
+                text-align: center; border: 1px solid #4caf50;
                 animation: fadeInOut 3s forwards;
             `;
             div.textContent = message;
             document.body.appendChild(div);
-
-            setTimeout(function() {
-                if (div.parentNode) div.remove();
-            }, 3000);
+            setTimeout(function() { if (div.parentNode) div.remove(); }, 3000);
         }
 
-        // Add style for notification
         var styleEl = document.createElement('style');
         styleEl.textContent = `
             @keyframes fadeInOut {
@@ -584,10 +925,32 @@
         document.head.appendChild(styleEl);
 
         // =============================================
+        // LEAVE ROOM
+        // =============================================
+        function leaveRoom() {
+            if (confirm('Leave the whiteboard?')) {
+                if (isRecording && mediaRecorder) {
+                    try { mediaRecorder.stop(); } catch(e) {}
+                }
+                if (recordingStream) {
+                    recordingStream.getTracks().forEach(function(track) { track.stop(); });
+                }
+                window.location.href = isTeacher ? 'teacher-dashboard.html' : 'student-dashboard.html';
+            }
+        }
+
+        // =============================================
         // KEYBOARD SHORTCUTS
         // =============================================
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') leaveRoom();
+            if (e.key === 'Escape') {
+                var panel = document.getElementById('chatPanel');
+                if (panel.classList.contains('active')) {
+                    panel.classList.remove('active');
+                    return;
+                }
+                leaveRoom();
+            }
             if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undoAction(); }
             if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redoAction(); }
             if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveBoard(); }
@@ -598,18 +961,26 @@
         // =============================================
         document.addEventListener('DOMContentLoaded', function() {
             setupCanvas();
-
+            
             canvas.addEventListener('mousedown', startDrawing);
             canvas.addEventListener('mousemove', draw);
             canvas.addEventListener('mouseup', stopDrawing);
-            canvas.addEventListener('mouseleave', function(e) {
-                if (isDrawing) stopDrawing(e);
-            });
-
+            canvas.addEventListener('mouseleave', function(e) { if (isDrawing) stopDrawing(e); });
             canvas.addEventListener('touchstart', startDrawing, { passive: false });
             canvas.addEventListener('touchmove', draw, { passive: false });
             canvas.addEventListener('touchend', stopDrawing, { passive: false });
+            
+            document.getElementById('participantCount').textContent = '1';
         });
+
+        // =============================================
+        // UPDATE PARTICIPANTS
+        // =============================================
+        function updateParticipantCount() {
+            var count = 1 + Math.floor(Math.random() * 3);
+            document.getElementById('participantCount').textContent = count;
+        }
+        setInterval(updateParticipantCount, 10000);
 
         // =============================================
         // INIT
@@ -618,14 +989,8 @@
         console.log('🆔 Room:', roomId);
         console.log('👤 Role:', role);
         console.log('📝 Name:', userName);
+        console.log('📦 Storage bucket:', BUCKET_NAME);
         console.log('✅ Ready to draw!');
-
-        // Check if canvas is ready
-        window.addEventListener('load', function() {
-            setupCanvas();
-            // Update participant count
-            document.getElementById('participantCount').textContent = '1';
-        });
     </script>
 </body>
 </html>

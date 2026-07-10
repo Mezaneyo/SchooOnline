@@ -8,15 +8,305 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        /* Slideshow Styles */
+        .slideshow-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            min-height: 500px;
+            overflow: hidden;
+        }
+
+        .slideshow-container .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .slideshow-container .slide.active {
+            opacity: 1;
+        }
+
+        .slideshow-container .slide .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+            padding: 20px;
+        }
+
+        .slideshow-container .slide .overlay h1 {
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .slideshow-container .slide .overlay h1 .highlight {
+            color: #4caf50;
+        }
+
+        .slideshow-container .slide .overlay p {
+            font-size: 20px;
+            max-width: 600px;
+            margin-bottom: 30px;
+            text-shadow: 1px 1px 5px rgba(0,0,0,0.5);
+        }
+
+        .slideshow-container .slide .overlay .btn {
+            display: inline-block;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-size: 16px;
+            margin: 0 8px;
+        }
+
+        .slideshow-container .slide .overlay .btn-primary {
+            background: #4caf50;
+            color: white;
+        }
+
+        .slideshow-container .slide .overlay .btn-primary:hover {
+            background: #388e3c;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .slideshow-container .slide .overlay .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .slideshow-container .slide .overlay .btn-secondary:hover {
+            background: white;
+            color: #1a2a3a;
+            transform: translateY(-2px);
+        }
+
+        /* Slideshow Indicators */
+        .slideshow-indicators {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            z-index: 10;
+        }
+
+        .slideshow-indicators .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .slideshow-indicators .dot.active {
+            background: #4caf50;
+            transform: scale(1.2);
+        }
+
+        .slideshow-indicators .dot:hover {
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Slideshow Arrows */
+        .slideshow-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            cursor: pointer;
+            font-size: 24px;
+            border-radius: 4px;
+            z-index: 10;
+            transition: background 0.3s;
+        }
+
+        .slideshow-arrow:hover {
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .slideshow-arrow.prev { left: 20px; }
+        .slideshow-arrow.next { right: 20px; }
+
+        /* Features Section - Below Slideshow */
+        .features-section {
+            padding: 80px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .features-section h2 {
+            text-align: center;
+            font-size: 36px;
+            margin-bottom: 50px;
+            color: #1a2a3a;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+
+        .feature-icon { font-size: 48px; margin-bottom: 15px; }
+        .feature-card h3 { font-size: 20px; margin-bottom: 10px; color: #1a2a3a; }
+        .feature-card p { color: #666; font-size: 15px; }
+
+        /* Popular Courses */
+        .courses-section {
+            padding: 80px 20px;
+            background: #f0f4f8;
+        }
+
+        .courses-section h2 {
+            text-align: center;
+            font-size: 36px;
+            margin-bottom: 50px;
+            color: #1a2a3a;
+        }
+
+        .course-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+        }
+
+        .course-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s;
+            text-align: center;
+        }
+
+        .course-card:hover { transform: translateY(-5px); }
+        .course-card .course-icon { font-size: 40px; margin-bottom: 10px; }
+        .course-card h3 { font-size: 18px; margin-bottom: 8px; color: #1a2a3a; }
+        .course-card p { color: #666; font-size: 14px; margin-bottom: 15px; }
+        .course-card .btn {
+            background: #2d6a4f;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+        .course-card .btn:hover { background: #1b4332; }
+
+        /* Navbar */
+        .navbar {
+            background: #1a2a3a;
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .logo img {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .logo span { color: #4caf50; }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: #c8d6e5;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            font-size: 15px;
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active { color: #4caf50; }
+
+        .mobile-menu {
+            display: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+        }
+
         .auth-status {
             display: flex;
             align-items: center;
             gap: 15px;
         }
-        .auth-status .user-name {
-            color: white;
-            font-size: 14px;
-        }
+
+        .auth-status .user-name { color: white; font-size: 14px; }
         .auth-status .btn-logout {
             background: #dc3545;
             color: white;
@@ -25,10 +315,10 @@
             border-radius: 6px;
             cursor: pointer;
             font-size: 13px;
+            transition: background 0.3s;
         }
-        .auth-status .btn-logout:hover {
-            background: #c82333;
-        }
+        .auth-status .btn-logout:hover { background: #c82333; }
+
         .btn-dashboard {
             background: #2d6a4f;
             color: white;
@@ -38,13 +328,76 @@
             cursor: pointer;
             font-size: 13px;
             text-decoration: none;
+            transition: background 0.3s;
         }
-        .btn-dashboard:hover {
-            background: #1b4332;
+        .btn-dashboard:hover { background: #1b4332; }
+
+        /* Footer */
+        footer {
+            background: #1a2a3a;
+            color: #c8d6e5;
+            padding: 50px 20px 20px;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+
+        .footer-section h3 { color: white; font-size: 20px; margin-bottom: 10px; }
+        .footer-section h4 { color: white; font-size: 16px; margin-bottom: 10px; }
+        .footer-section ul { list-style: none; }
+        .footer-section ul li { margin-bottom: 8px; }
+        .footer-section ul li a { color: #c8d6e5; text-decoration: none; transition: color 0.3s; }
+        .footer-section ul li a:hover { color: #4caf50; }
+        .footer-bottom { text-align: center; padding-top: 20px; border-top: 1px solid #2d4a5a; color: #7a8b9e; font-size: 14px; }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .slideshow-container .slide .overlay h1 { font-size: 36px; }
+            .slideshow-container .slide .overlay p { font-size: 18px; }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                top: 70px;
+                left: 0;
+                width: 100%;
+                background: #1a2a3a;
+                padding: 20px;
+                gap: 15px;
+            }
+            .nav-links.active { display: flex; }
+            .mobile-menu { display: block; }
+
+            .slideshow-container { height: 70vh; min-height: 400px; }
+            .slideshow-container .slide .overlay h1 { font-size: 28px; }
+            .slideshow-container .slide .overlay p { font-size: 16px; }
+
+            .slideshow-arrow { padding: 10px 14px; font-size: 18px; }
+            .slideshow-indicators { bottom: 15px; gap: 8px; }
+            .slideshow-indicators .dot { width: 10px; height: 10px; }
+
+            .features-grid, .course-grid { grid-template-columns: 1fr; }
+            .footer-content { grid-template-columns: 1fr; text-align: center; }
+        }
+
+        @media (max-width: 480px) {
+            .slideshow-container .slide .overlay h1 { font-size: 22px; }
+            .slideshow-container .slide .overlay .btn { padding: 10px 18px; font-size: 14px; }
         }
     </style>
 </head>
 <body>
+
+    <!-- Navbar -->
     <nav class="navbar">
         <div class="nav-container">
             <div class="logo">
@@ -59,22 +412,17 @@
                     <a href="login.html" id="authLink">Login</a>
                 </li>
             </ul>
-            <div class="mobile-menu">☰</div>
+            <div class="mobile-menu" onclick="document.querySelector('.nav-links').classList.toggle('active')">☰</div>
         </div>
     </nav>
 
-    <section class="hero">
-        <div class="hero-content">
-            <h1>Welcome to <span class="highlight">MEZANEYO</span> ONLINE SCHOOL</h1>
-            <p>Quality secondary education accessible anywhere, anytime. Master subjects at your own pace with expert-crafted lessons.</p>
-            <div class="hero-buttons">
-                <a href="signup.html" class="btn btn-primary">Start Learning →</a>
-                <a href="#features" class="btn btn-secondary">Learn More</a>
-            </div>
-        </div>
-    </section>
+    <!-- Slideshow Section -->
+    <div class="slideshow-container" id="slideshowContainer">
+        <!-- Slides will be generated by JavaScript -->
+    </div>
 
-    <section id="features" class="features">
+    <!-- Features Section -->
+    <section class="features-section" id="features">
         <h2>Why Choose MEZANEYO?</h2>
         <div class="features-grid">
             <div class="feature-card">
@@ -100,11 +448,13 @@
         </div>
     </section>
 
-    <section class="popular-courses">
+    <!-- Popular Courses -->
+    <section class="courses-section">
         <h2>Popular Courses</h2>
         <div class="course-grid" id="popularCourses"></div>
     </section>
 
+    <!-- Footer -->
     <footer>
         <div class="footer-content">
             <div class="footer-section">
@@ -122,7 +472,7 @@
             <div class="footer-section">
                 <h4>Contact</h4>
                 <p>Email: info@mezaneyo.com</p>
-                <p>Phone: +250 99 5514 049</p>
+                <p>Phone: +265 99 5514 049</p>
             </div>
         </div>
         <div class="footer-bottom">
@@ -132,28 +482,161 @@
 
     <script>
         // =============================================
-        // SUPABASE CONFIGURATION
+        // SUPABASE CONFIG
         // =============================================
-        const SUPABASE_URL = 'https://nivmrwbusbeppdssmfpj.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_kwF_yAmJ5AWnbaIe57snrw_fXng7-6a';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        var SUPABASE_URL = 'https://nivmrwbusbeppdssmfpj.supabase.co';
+        var SUPABASE_ANON_KEY = 'sb_publishable_kwF_yAmJ5AWnbaIe57snrw_fXng7-6a';
+        var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // =============================================
+        // SLIDESHOW CONFIG
+        // =============================================
+        var slideshowImages = [
+            { src: 'logo.png', title: 'Welcome to MEZANEYO ONLINE SCHOOL', subtitle: 'Quality secondary education accessible anywhere, anytime. Master subjects at your own pace with expert-crafted lessons.' },
+            { src: 'i1.jpg', title: '📚 Complete Curriculum', subtitle: 'Mathematics, Sciences, Languages, Humanities - aligned with national standards.' },
+            { src: 'i2.jpg', title: '🎥 Video Lessons', subtitle: 'Engaging video explanations with real-world examples and animations.' },
+            { src: 'i3.jpg', title: '📝 Interactive Quizzes', subtitle: 'Test your knowledge with instant feedback and detailed explanations.' },
+            { src: 'i4.jpg', title: '📊 Track Progress', subtitle: 'Monitor your learning journey with detailed analytics and certificates.' },
+            { src: 'i5.jpg', title: '🏫 MEZANEYO ONLINE SCHOOL', subtitle: 'Join thousands of students learning online today!' }
+        ];
+
+        var currentSlide = 0;
+        var slideInterval = null;
+        var slideDuration = 5500; // 4 seconds per slide
+
+        // =============================================
+        // BUILD SLIDESHOW
+        // =============================================
+        function buildSlideshow() {
+            var container = document.getElementById('slideshowContainer');
+            if (!container) return;
+
+            var slidesHtml = '';
+            var indicatorsHtml = '';
+
+            for (var i = 0; i < slideshowImages.length; i++) {
+                var img = slideshowImages[i];
+                var activeClass = i === 0 ? 'active' : '';
+                var isLogo = img.src === 'logo.png';
+
+                slidesHtml += `
+                    <div class="slide ${activeClass}" style="background-image: url('${img.src}');">
+                        <div class="overlay">
+                            ${isLogo ? `<img src="logo.png" alt="MEZANEYO Logo" style="width:120px;height:120px;border-radius:16px;margin-bottom:20px;box-shadow:0 4px 20px rgba(0,0,0,0.3);">` : ''}
+                            <h1>${img.title}</h1>
+                            <p>${img.subtitle}</p>
+                            <div>
+                                <a href="signup.html" class="btn btn-primary">Start Learning →</a>
+                                <a href="#features" class="btn btn-secondary">Learn More</a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                indicatorsHtml += `<span class="dot ${activeClass}" onclick="goToSlide(${i})"></span>`;
+            }
+
+            container.innerHTML = `
+                ${slidesHtml}
+                <button class="slideshow-arrow prev" onclick="prevSlide()">❮</button>
+                <button class="slideshow-arrow next" onclick="nextSlide()">❯</button>
+                <div class="slideshow-indicators">${indicatorsHtml}</div>
+            `;
+        }
+
+        // =============================================
+        // SLIDESHOW CONTROLS
+        // =============================================
+        function goToSlide(index) {
+            var slides = document.querySelectorAll('.slide');
+            var dots = document.querySelectorAll('.dot');
+
+            if (!slides.length) return;
+
+            // Remove active from all
+            slides.forEach(function(s) { s.classList.remove('active'); });
+            dots.forEach(function(d) { d.classList.remove('active'); });
+
+            // Add active to current
+            currentSlide = index;
+            if (slides[currentSlide]) slides[currentSlide].classList.add('active');
+            if (dots[currentSlide]) dots[currentSlide].classList.add('active');
+        }
+
+        function nextSlide() {
+            var next = (currentSlide + 1) % slideshowImages.length;
+            goToSlide(next);
+            resetTimer();
+        }
+
+        function prevSlide() {
+            var prev = (currentSlide - 1 + slideshowImages.length) % slideshowImages.length;
+            goToSlide(prev);
+            resetTimer();
+        }
+
+        function resetTimer() {
+            if (slideInterval) {
+                clearInterval(slideInterval);
+                slideInterval = null;
+            }
+            startTimer();
+        }
+
+        function startTimer() {
+            if (slideInterval) clearInterval(slideInterval);
+            slideInterval = setInterval(function() {
+                nextSlide();
+            }, slideDuration);
+        }
+
+        // =============================================
+        // PAUSE ON HOVER
+        // =============================================
+        function setupHoverPause() {
+            var container = document.getElementById('slideshowContainer');
+            if (!container) return;
+
+            container.addEventListener('mouseenter', function() {
+                if (slideInterval) {
+                    clearInterval(slideInterval);
+                    slideInterval = null;
+                }
+            });
+
+            container.addEventListener('mouseleave', function() {
+                startTimer();
+            });
+
+            // Touch support for mobile
+            container.addEventListener('touchstart', function() {
+                if (slideInterval) {
+                    clearInterval(slideInterval);
+                    slideInterval = null;
+                }
+            });
+
+            container.addEventListener('touchend', function() {
+                startTimer();
+            });
+        }
 
         // =============================================
         // CHECK AUTH STATUS
         // =============================================
         async function checkAuth() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            const authNav = document.getElementById('authNav');
-            
+            var { data: { session } } = await supabaseClient.auth.getSession();
+            var authNav = document.getElementById('authNav');
+
             if (session) {
-                const user = session.user;
-                const fullName = user.user_metadata?.full_name || user.email;
-                const role = user.user_metadata?.role || 'student';
-                
-                let dashboardUrl = 'student-dashboard.html';
+                var user = session.user;
+                var fullName = user.user_metadata?.full_name || user.email;
+                var role = user.user_metadata?.role || 'student';
+
+                var dashboardUrl = 'student-dashboard.html';
                 if (role === 'admin') dashboardUrl = 'admin-dashboard.html';
                 else if (role === 'teacher') dashboardUrl = 'teacher-dashboard.html';
-                
+
                 authNav.innerHTML = `
                     <div class="auth-status">
                         <span class="user-name">👋 ${fullName}</span>
@@ -178,7 +661,7 @@
         // LOAD POPULAR COURSES
         // =============================================
         function loadPopularCourses() {
-            const courses = [
+            var courses = [
                 { title: 'Mathematics', description: 'Algebra, Geometry, Calculus & Statistics', icon: '📐' },
                 { title: 'English Language', description: 'Grammar, Literature, Writing & Comprehension', icon: '📖' },
                 { title: 'Physics', description: 'Mechanics, Electricity, Optics & Modern Physics', icon: '⚛️' },
@@ -186,31 +669,37 @@
                 { title: 'Biology', description: 'Cell Biology, Genetics, Ecology & Human Anatomy', icon: '🧬' },
                 { title: 'History', description: 'World History, African History & Modern Events', icon: '🏛️' }
             ];
-            
-            const grid = document.getElementById('popularCourses');
+
+            var grid = document.getElementById('popularCourses');
             if (grid) {
-                grid.innerHTML = courses.map(course => `
-                    <div class="course-card">
-                        <div class="course-icon">${course.icon}</div>
-                        <h3>${course.title}</h3>
-                        <p>${course.description}</p>
-                        <a href="courses.html" class="btn btn-sm">Learn More →</a>
-                    </div>
-                `).join('');
+                grid.innerHTML = courses.map(function(course) {
+                    return `
+                        <div class="course-card">
+                            <div class="course-icon">${course.icon}</div>
+                            <h3>${course.title}</h3>
+                            <p>${course.description}</p>
+                            <a href="courses.html" class="btn">Learn More →</a>
+                        </div>
+                    `;
+                }).join('');
             }
         }
 
         // =============================================
-        // MOBILE MENU
+        // KEYBOARD SHORTCUTS
         // =============================================
-        document.querySelector('.mobile-menu')?.addEventListener('click', function() {
-            document.querySelector('.nav-links').classList.toggle('active');
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') prevSlide();
+            if (e.key === 'ArrowRight') nextSlide();
         });
 
         // =============================================
         // INIT
         // =============================================
         window.onload = function() {
+            buildSlideshow();
+            startTimer();
+            setupHoverPause();
             checkAuth();
             loadPopularCourses();
         };
