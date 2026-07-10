@@ -1,7 +1,11 @@
-Flask==2.3.3
-Flask-CORS==4.0.0
+Flask==2.2.5
+Flask-CORS==3.0.10
 supabase==1.2.0
 python-dotenv==1.0.0
-Werkzeug==2.3.7
-gunicorn==21.2.0
-setuptools==68.0.0
+Werkzeug==2.2.3
+gunicorn==20.1.0
+setuptools==65.5.0
+wheel==0.38.4
+httpx==0.23.3
+httpcore==0.15.0
+certifi==2022.12.07
