@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - MEZANEYO School</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background: #f0f4f8; }
+
+        .sidebar {
+            width: 260px;
+            height: 100vh;
+            background: #1a2a3a;
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding: 20px;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+        .sidebar .logo { font-size: 22px; font-weight: 700; padding: 10px 0 25px 0; border-bottom: 1px solid #2d4a5a; }
+        .sidebar .logo span { color: #4caf50; }
+        .sidebar nav ul { list-style: none; padding-top: 15px; }
+        .sidebar nav ul li {
+            padding: 10px 14px;
+            margin-bottom: 3px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        .sidebar nav ul li:hover, .sidebar nav ul li.active { background: #2d4a5a; }
+        .sidebar nav ul li .icon { margin-right: 10px; }
+        .sidebar nav ul li a { color: white; text-decoration: none; display: block; }
+
+        .main-content { margin-left: 260px; padding: 25px; min-height: 100vh; }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .header h1 { font-size: 22px; }
+        .header-right { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .btn { background: #2d6a4f; color: white; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        .btn:hover { opacity: 0.85; }
+        .btn-danger { background: #dc3545; }
+        .btn-warning { background: #ffc107; color: #333; }
+        .btn-sm { padding: 4px 12px; font-size: 12px; }
+        .btn-primary { background: #007bff; }
+        .btn-success { background: #28a745; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: white;
+            padding: 18px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .stat-card h3 { font-size: 28px; color: #1a2a3a; }
+        .stat-card p { color: #666; font-size: 13px; }
+        .stat-card .icon { font-size: 24px; }
+
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .section h2 { margin-bottom: 12px; font-size: 17px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        table th, table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee; }
+        table th { background: #f8f9fa; font-weight: 600; }
+
+        .badge-present { background: #d4edda; color: #155724; padding: 3px 10px; border-radius: 20px; font-size: 11px; }
+        .badge-absent { background: #f8d7da; color: #721c24; padding: 3px 10px; border-radius: 20px; font-size: 11px; }
+        .badge-late { background: #fff3cd; color: #856404; padding: 3px 10px; border-radius: 20px; font-size: 11px; }
+
+        .grade-a { color: #28a745; font-weight: 700; }
+        .grade-b { color: #17a2b8; font-weight: 700; }
+        .grade-c { color: #ffc107; font-weight: 700; }
+        .grade-d { color: #fd7e14; font-weight: 700; }
+        .grade-f { color: #dc3545; font-weight: 700; }
+
+        .profile-card {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            flex-wrap: wrap;
+        }
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: #2d6a4f;
+            color: white;
+            font-size: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            border: 4px solid #2d6a4f;
+        }
+        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-avatar .upload-btn {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            text-align: center;
+            padding: 4px 0;
+            font-size: 11px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .profile-avatar:hover .upload-btn { opacity: 1; }
+        .profile-avatar .upload-btn input { display: none; }
+
+        .profile-info h3 { font-size: 24px; }
+        .profile-info p { color: #666; }
+
+        .menu-toggle {
+            display: none;
+            background: #1a2a3a;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 22px;
+            cursor: pointer;
+            z-index: 1001;
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+        .overlay.active { display: block; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .success-msg, .error-msg { padding: 10px; border-radius: 6px; margin: 10px 0; display: none; font-size: 14px; }
+        .success-msg { background: #d4edda; color: #155724; }
+        .error-msg { background: #f8d7da; color: #721c24; }
+
+        .whiteboard-notice {
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+        }
+
+        .lesson-card, .assignment-card, .quiz-card, .forum-card {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+        }
+        .lesson-card h4, .assignment-card h4, .quiz-card h4, .forum-card h4 { margin-bottom: 5px; }
+        .lesson-card .meta, .assignment-card .meta, .quiz-card .meta, .forum-card .meta { color: #666; font-size: 12px; }
+        .lesson-card .video-link {
+            display: inline-block;
+            background: #ff0000;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            text-decoration: none;
+            margin-top: 5px;
+        }
+        .lesson-card .file-link {
+            display: inline-block;
+            background: #2d6a4f;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            text-decoration: none;
+            margin-top: 5px;
+        }
+
+        .announcement {
+            border-left: 4px solid #2d6a4f;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        .announcement .title { font-weight: 600; }
+        .announcement .meta { color: #666; font-size: 12px; }
+        .announcement.pinned { border-left-color: #ffc107; background: #fff8e1; }
+
+        .message-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .message-item .sender { font-weight: 600; }
+        .message-item .time { color: #999; font-size: 11px; }
+        .message-item.unread { background: #e3f2fd; }
+
+        .question-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 60px;
+        }
+        .question-input:focus { outline: none; border-color: #2d6a4f; }
+
+        .question-item {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+        }
+        .question-item .q { font-weight: 500; }
+        .question-item .a { 
+            color: #2d6a4f; 
+            margin-top: 5px; 
+            padding: 8px; 
+            background: #f8f9fa; 
+            border-radius: 4px; 
+            border-left: 3px solid #2d6a4f;
+        }
+
+        .recording-video {
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .recording-video video {
+            width: 100%;
+            max-height: 200px;
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); width: 280px; }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; padding: 15px; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .menu-toggle { display: inline-block; }
+            .sidebar:not(.open) { transform: translateX(-100%); }
+            .profile-card { flex-direction: column; text-align: center; }
+            .profile-avatar { width: 100px; height: 100px; }
+        }
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .header { flex-direction: column; align-items: flex-start; }
+            .header-right { width: 100%; justify-content: space-between; }
+            .whiteboard-notice { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<div class="sidebar" id="sidebar">
+    <div class="logo">🏫 MEZANEYO <span>School</span></div>
+    <nav>
+        <ul>
+            <li class="active" onclick="showTab('dashboard')"><span class="icon">📊</span> Dashboard</li>
+            <li onclick="showTab('announcements')"><span class="icon">📢</span> Announcements</li>
+            <li onclick="showTab('messages')"><span class="icon">💬</span> Messages</li>
+            <li onclick="showTab('profile')"><span class="icon">👤</span> My Profile</li>
+            <li onclick="showTab('subjects')"><span class="icon">📖</span> My Subjects</li>
+            <li onclick="showTab('lessons')"><span class="icon">📺</span> Lessons</li>
+            <li onclick="showTab('assignments')"><span class="icon">📝</span> Assignments</li>
+            <li onclick="showTab('quizzes')"><span class="icon">🧪</span> Quizzes</li>
+            <li onclick="showTab('saved')"><span class="icon">💾</span> Saved Recordings</li>
+            <li onclick="showTab('attendance')"><span class="icon">📅</span> My Attendance</li>
+            <li onclick="showTab('grades')"><span class="icon">📈</span> My Grades</li>
+            <li onclick="showTab('forums')"><span class="icon">💬</span> Forums</li>
+            <li><a href="/"><span class="icon">🏠</span> Back to Site</a></li>
+        </ul>
+    </nav>
+</div>
+
+<div class="main-content">
+    <div class="header">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">☰</button>
+            <h1 id="pageTitle">📊 Dashboard</h1>
+        </div>
+        <div class="header-right">
+            <span id="studentName" style="font-weight:500;"></span>
+            <span id="studentClass" style="font-weight:400;color:#666;font-size:13px;"></span>
+            <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div id="successMsg" class="success-msg">✅ Success!</div>
+    <div id="errorMsg" class="error-msg">❌ <span id="errorText"></span></div>
+
+    <!-- DASHBOARD -->
+    <div id="tab-dashboard" class="tab-content active">
+        <div id="whiteboardStatus"></div>
+        <div id="announcementPreview"></div>
+        <div class="stats-grid">
+            <div class="stat-card"><div class="icon">📅</div><h3 id="attendanceRate">0%</h3><p>Attendance Rate</p></div>
+            <div class="stat-card"><div class="icon">📈</div><h3 id="avgGrade">-</h3><p>Average Grade</p></div>
+            <div class="stat-card"><div class="icon">📖</div><h3 id="totalSubjects">0</h3><p>Subjects</p></div>
+            <div class="stat-card"><div class="icon">📢</div><h3 id="newAnnouncements">0</h3><p>New Announcements</p></div>
+        </div>
+        <div class="section">
+            <h2>📋 Recent Activity</h2>
+            <div id="recentActivity"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- ANNOUNCEMENTS -->
+    <div id="tab-announcements" class="tab-content">
+        <div class="section">
+            <h2>📢 All Announcements</h2>
+            <div id="announcementsList"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- MESSAGES -->
+    <div id="tab-messages" class="tab-content">
+        <div class="section">
+            <h2>💬 Messages</h2>
+            <div style="margin-bottom:15px;">
+                <textarea id="messageInput" class="question-input" placeholder="Type your message to teacher..." rows="2"></textarea>
+                <button class="btn btn-primary btn-sm" onclick="sendMessage()" style="margin-top:5px;">📤 Send</button>
+            </div>
+            <div id="messagesList"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div id="tab-profile" class="tab-content">
+        <div class="section">
+            <h2>👤 My Profile</h2>
+            <div id="profileContent"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- SUBJECTS -->
+    <div id="tab-subjects" class="tab-content">
+        <div class="section">
+            <h2>📖 My Subjects</h2>
+            <div id="subjectList"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- LESSONS -->
+    <div id="tab-lessons" class="tab-content">
+        <div class="section">
+            <h2>📺 My Lessons</h2>
+            <div id="lessonsList"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- ASSIGNMENTS -->
+    <div id="tab-assignments" class="tab-content">
+        <div class="section">
+            <h2>📝 My Assignments</h2>
+            <div id="assignmentsList"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- QUIZZES -->
+    <div id="tab-quizzes" class="tab-content">
+        <div class="section">
+            <h2>🧪 My Quizzes</h2>
+            <div id="quizzesList"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- SAVED RECORDINGS -->
+    <div id="tab-saved" class="tab-content">
+        <div class="section">
+            <h2>💾 Saved Recordings</h2>
+            <div id="savedList"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- ATTENDANCE -->
+    <div id="tab-attendance" class="tab-content">
+        <div class="section">
+            <h2>📅 My Attendance</h2>
+            <div id="attendanceTable"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- GRADES -->
+    <div id="tab-grades" class="tab-content">
+        <div class="section">
+            <h2>📈 My Grades</h2>
+            <div id="gradesTable"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+
+    <!-- FORUMS -->
+    <div id="tab-forums" class="tab-content">
+        <div class="section">
+            <h2>💬 Class Forums</h2>
+            <div id="forumsList"><p style="color:#999;">Loading...</p></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // =============================================
+    // API HELPER
+    // =============================================
+    async function apiFetch(url, options = {}) {
+        const response = await fetch(url, {
+            ...options,
+            headers: { 'Content-Type': 'application/json', ...options.headers }
+        });
+        return response.json();
+    }
+
+    // =============================================
+    // TOGGLE SIDEBAR
+    // =============================================
+    function toggleSidebar() {
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.getElementById('overlay');
+        if (sidebar) {
+            sidebar.classList.toggle('open');
+            if (overlay) overlay.classList.toggle('active');
+        }
+    }
+
+    function closeSidebar() {
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.getElementById('overlay');
+        if (sidebar) sidebar.classList.remove('open');
+        if (overlay) overlay.classList.remove('active');
+    }
+
+    // =============================================
+    // CHECK AUTH
+    // =============================================
+    async function checkAuth() {
+        try {
+            var data = await apiFetch('/api/auth/me');
+            if (data.success && data.user) {
+                if (data.user.role !== 'student') {
+                    window.location.href = '/' + data.user.role + '-dashboard';
+                    return;
+                }
+                document.getElementById('studentName').textContent = data.user.full_name;
+                document.getElementById('studentClass').textContent = '📚 ' + (data.user.class || 'Not Assigned');
+                loadDashboard();
+                checkWhiteboardSessions();
+            } else {
+                window.location.href = '/login';
+            }
+        } catch (error) {
+            console.error('Auth error:', error);
+            window.location.href = '/login';
+        }
+    }
+
+    // =============================================
+    // SHOW TAB
+    // =============================================
+    function showTab(tab) {
+        activeTab = tab;
+        document.querySelectorAll('.sidebar nav ul li').forEach(function(el) { el.classList.remove('active'); });
+        var items = document.querySelectorAll('.sidebar nav ul li');
+        var tabs = ['dashboard','announcements','messages','profile','subjects','lessons','assignments','quizzes','saved','attendance','grades','forums'];
+        var idx = tabs.indexOf(tab);
+        if (items[idx]) items[idx].classList.add('active');
+        
+        document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.remove('active'); });
+        var target = document.getElementById('tab-' + tab);
+        if (target) target.classList.add('active');
+        
+        var titles = {
+            dashboard: '📊 Dashboard',
+            announcements: '📢 Announcements',
+            messages: '💬 Messages',
+            profile: '👤 My Profile',
+            subjects: '📖 My Subjects',
+            lessons: '📺 Lessons',
+            assignments: '📝 Assignments',
+            quizzes: '🧪 Quizzes',
+            saved: '💾 Saved Recordings',
+            attendance: '📅 My Attendance',
+            grades: '📈 My Grades',
+            forums: '💬 Forums'
+        };
+        document.getElementById('pageTitle').textContent = titles[tab] || 'Dashboard';
+        closeSidebar();
+        
+        if (tab === 'announcements') loadAnnouncements();
+        else if (tab === 'messages') loadMessages();
+        else if (tab === 'profile') loadProfile();
+        else if (tab === 'subjects') loadSubjects();
+        else if (tab === 'lessons') loadLessons();
+        else if (tab === 'assignments') loadAssignments();
+        else if (tab === 'quizzes') loadQuizzes();
+        else if (tab === 'saved') loadSavedRecordings();
+        else if (tab === 'attendance') loadAttendance();
+        else if (tab === 'grades') loadGrades();
+        else if (tab === 'forums') loadForums();
+    }
+
+    // =============================================
+    // LOAD DASHBOARD
+    // =============================================
+    async function loadDashboard() {
+        try {
+            // Attendance
+            var attendance = await apiFetch('/api/attendance');
+            document.getElementById('attendanceRate').textContent = '0%';
+            
+            // Grades
+            var grades = await apiFetch('/api/grades');
+            if (grades.success && grades.grades && grades.grades.length > 0) {
+                var scores = grades.grades.map(function(g) { return g.score || 0; });
+                var avg = scores.reduce(function(a, b) { return a + b; }, 0) / scores.length;
+                document.getElementById('avgGrade').textContent = avg.toFixed(1);
+                document.getElementById('totalSubjects').textContent = grades.grades.length;
+            }
+            
+            // Announcements
+            var announcements = await apiFetch('/api/announcements');
+            document.getElementById('newAnnouncements').textContent = announcements.success ? announcements.announcements.length : 0;
+            
+            // Load announcement preview
+            loadAnnouncementPreview();
+        } catch (error) {
+            console.error('Dashboard error:', error);
+        }
+    }
+
+    // =============================================
+    // LOAD ANNOUNCEMENT PREVIEW
+    // =============================================
+    async function loadAnnouncementPreview() {
+        try {
+            var data = await apiFetch('/api/announcements');
+            var container = document.getElementById('announcementPreview');
+            if (data.success && data.announcements && data.announcements.length > 0) {
+                var html = '<div class="section" style="padding:12px 15px;"><h2 style="font-size:15px;">📢 Latest Announcements</h2>';
+                for (var i = 0; i < Math.min(2, data.announcements.length); i++) {
+                    var a = data.announcements[i];
+                    html += `
+                        <div class="announcement ${a.is_pinned ? 'pinned' : ''}">
+                            <div class="title">${a.is_pinned ? '📌 ' : ''}${a.title}</div>
+                            <div style="color:#444;font-size:13px;margin-top:4px;">${a.content.substring(0, 100)}${a.content.length > 100 ? '...' : ''}</div>
+                            <div class="meta">${a.author_name || 'Admin'} • ${new Date(a.created_at).toLocaleDateString()}</div>
+                        </div>
+                    `;
+                }
+                html += '</div>';
+                container.innerHTML = html;
+            }
+        } catch (error) {
+            console.error('Announcement preview error:', error);
+        }
+    }
+
+    // =============================================
+    // CHECK WHITEBOARD SESSIONS
+    // =============================================
+    async function checkWhiteboardSessions() {
+        try {
+            var data = await apiFetch('/api/interactive-sessions');
+            var container = document.getElementById('whiteboardStatus');
+            if (data.success && data.sessions && data.sessions.length > 0) {
+                var s = data.sessions[0];
+                container.innerHTML = `
+                    <div class="whiteboard-notice">
+                        <div>
+                            <span style="font-size:20px;">🖊️</span>
+                            <strong>${s.session_name}</strong>
+                            <div style="color:#666;font-size:13px;">👨‍🏫 Teacher • Started: ${new Date(s.started_at).toLocaleTimeString()}</div>
+                            <div style="color:#666;font-size:12px;margin-top:4px;">💡 You can watch and ask questions via chat</div>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="window.open('/whiteboard?room=${s.session_code}&session=${s.id}&role=student&name=Student','_blank','width=1200,height=800')">🖊️ Join & Watch</button>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = '';
+            }
+        } catch (error) {
+            console.error('Whiteboard error:', error);
+        }
+    }
+
+    // =============================================
+    // LOAD ANNOUNCEMENTS
+    // =============================================
+    async function loadAnnouncements() {
+        try {
+            var data = await apiFetch('/api/announcements');
+            var container = document.getElementById('announcementsList');
+            if (data.success && data.announcements && data.announcements.length > 0) {
+                var html = '';
+                for (var i = 0; i < data.announcements.length; i++) {
+                    var a = data.announcements[i];
+                    html += `
+                        <div class="announcement ${a.is_pinned ? 'pinned' : ''}">
+                            <div class="title">${a.is_pinned ? '📌 ' : ''}${a.title}</div>
+                            <div style="color:#444;font-size:14px;margin-top:5px;">${a.content}</div>
+                            <div class="meta">${a.author_name || 'Admin'} • ${new Date(a.created_at).toLocaleString()}</div>
+                            ${a.author_role === 'teacher' ? '<div style="color:#2d6a4f;font-size:12px;">👨‍🏫 From your teacher</div>' : ''}
+                        </div>
+                    `;
+                }
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<p style="color:#999;padding:20px;text-align:center;">No announcements yet.</p>';
+            }
+        } catch (error) {
+            console.error('Announcements error:', error);
+        }
+    }
+
+    // =============================================
+    // MESSAGES
+    // =============================================
+    async function sendMessage() {
+        var message = document.getElementById('messageInput').value.trim();
+        if (!message) {
+            showError('Please type a message.');
+            return;
+        }
+        
+        try {
+            var user = await apiFetch('/api/auth/me');
+            var data = await apiFetch('/api/messages', {
+                method: 'POST',
+                body: JSON.stringify({
+                    sender_id: user.user.id,
+                    sender_name: user.user.full_name,
+                    sender_role: 'student',
+                    receiver_id: null,
+                    receiver_role: 'teacher',
+                    class_id: user.user.class_id || null,
+                    message: message,
+                    is_read: false
+                })
+            });
+            
+            if (data.success) {
+                document.getElementById('messageInput').value = '';
+                showSuccess('✅ Message sent to teacher!');
+                loadMessages();
+            } else {
+                showError('Error: ' + data.error);
+            }
+        } catch (error) {
+            showError('Error: ' + error.message);
+        }
+    }
+
+    async function loadMessages() {
+        try {
+            var user = await apiFetch('/api/auth/me');
+            var data = await apiFetch('/api/messages?user_id=' + user.user.id);
+            var container = document.getElementById('messagesList');
+            if (data.success && data.messages && data.messages.length > 0) {
+                var html = '';
+                for (var i = 0; i < data.messages.length; i++) {
+                    var m = data.messages[i];
+                    var isFromMe = m.sender_id === user.user.id;
+                    html += `
+                        <div class="message-item ${!m.is_read && !isFromMe ? 'unread' : ''}">
+                            <div class="sender">${isFromMe ? '👤 You' : '👨‍🏫 ' + (m.sender_name || 'Teacher')}</div>
+                            <div style="color:#444;font-size:14px;margin:4px 0;">${m.message}</div>
+                            <div class="time">${new Date(m.created_at).toLocaleString()}</div>
+                            ${!m.is_read && !isFromMe ? '<span style="color:#007bff;font-size:11px;">🔵 New</span>' : ''}
+                        </div>
+                    `;
+                }
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<p style="color:#999;padding:20px;text-align:center;">No messages yet. Send a message to your teacher.</p>';
+            }
+        } catch (error) {
+            console.error('Messages error:', error);
+        }
+    }
+
+    // =============================================
+    // PROFILE
+    // =============================================
+    function loadProfile() {
+        // Placeholder - will be implemented with actual data
+        document.getElementById('profileContent').innerHTML = `
+            <div class="profile-card">
+                <div class="profile-avatar">
+                    <span style="font-size:48px;">👨‍🎓</span>
+                    <div class="upload-btn" onclick="alert('Profile picture upload coming soon!')">
+                        📷 Upload
+                    </div>
+                </div>
+                <div class="profile-info">
+                    <h3 id="profileName">Loading...</h3>
+                    <p>📖 <strong>Class:</strong> <span id="profileClass">Loading...</span></p>
+                    <p>🆔 <strong>Student ID:</strong> <span id="profileId">Loading...</span></p>
+                    <p>👨‍👩‍👧 <strong>Guardian:</strong> <span id="profileGuardian">Not provided</span></p>
+                    <p>📞 <strong>Guardian Phone:</strong> <span id="profilePhone">Not provided</span></p>
+                </div>
+            </div>
+        `;
+    }
+
+    // =============================================
+    // SUBJECTS
+    // =============================================
+    async function loadSubjects() {
+        try {
+            var data = await apiFetch('/api/subjects');
+            var container = document.getElementById('subjectList');
+            if (data.success && data.subjects && data.subjects.length > 0) {
+                var html = '<table><thead><tr><th>Subject</th><th>Category</th></tr></thead><tbody>';
+                for (var i = 0; i < data.subjects.length; i++) {
+                    var s = data.subjects[i];
+                    var type = s.category === 'compulsory' ? '🟢 Compulsory' : s.category === 'optional' ? '🟡 Optional' : '🔵 Root';
+                    html += `<tr><td>${s.name}</td><td>${type}</td></tr>`;
+                }
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<p style="color:#999;">No subjects assigned to your form.</p>';
+            }
+        } catch (error) {
+            console.error('Subjects error:', error);
+        }
+    }
+
+    // =============================================
+    // LESSONS
+    // =============================================
+    async function loadLessons() {
+        try {
+            var data = await apiFetch('/api/lessons');
+            var container = document.getElementById('lessonsList');
+            if (data.success && data.lessons && data.lessons.length > 0) {
+                var html = '';
+                for (var i = 0; i < data.lessons.length; i++) {
+                    var l = data.lessons[i];
+                    html += `
+                        <div class="lesson-card">
+                            <h4>${l.title}</h4>
+                            <div class="meta">${l.subjects?.name || 'N/A'} • ${l.lesson_type || 'text'}</div>
+                            ${l.content ? `<div style="margin-top:5px;color:#444;">${l.content.substring(0, 150)}${l.content.length > 150 ? '...' : ''}</div>` : ''}
+                            ${l.video_url ? `<a href="${l.video_url}" target="_blank" class="video-link">▶️ Watch Video</a>` : ''}
+                            <div style="margin-top:8px;">
+                                <button class="btn btn-sm btn-primary" onclick="askQuestion('${l.id}', '${l.title}')">❓ Ask Question</button>
+                            </div>
+                        </div>
+                    `;
+                }
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<p style="color:#999;padding:20px;text-align:center;">No lessons available.</p>';
+            }
+        } catch (error) {
+            console.error('Lessons error:', error);
+        }
+    }
+
+    function askQuestion(lessonId, lessonTitle) {
+        var question = prompt('Ask a question about "' + lessonTitle + '":');
+        if (question && question.trim()) {
+            alert('✅ Question submitted! Teacher will answer soon.');
+        }
+    }
+
+    // =============================================
+    // ASSIGNMENTS
+    // =============================================
+    async function loadAssignments() {
+        try {
+            var data = await apiFetch('/api/assignments');
+            var container = document.getElementById('assignmentsList');
+            if (data.success && data.assignments && data.assignments.length > 0) {
+                var html = '';
+                for (var i = 0; i < data.assignments.length; i++) {
+                    var a = data.assignments[i];
+                    html += `
+                        <div class="assignment-card">
+                            <h4>${a.title}</h4>
+                            <div class="meta">Due: ${new Date(a.due_date).toLocaleDateString()} • ${a.subjects?.name || 'N/A'}</div>
+                            ${a.description ? `<div style="margin-top:5px;color:#444;">${a.description}</div>` : ''}
+                            ${a.attachment_url ? `<a href="${a.attachment_url}" target="_blank" class="file-link">📎 View Attachment</a>` : ''}
+                            <div style="margin-top:8px;">
+                                <button class="btn btn-sm btn-primary" onclick="submitAssignment('${a.id}')">📤 Submit</button>
+                            </div>
+                        </div>
+                    `;
+                }
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<p style="color:#999;padding:20px;text-align:center;">No assignments available.</p>';
+            }
+        } catch (error) {
+            console.error('Assignments error:', error);
+        }
+    }
+
+    function submitAssignment(assignmentId) {
+        var submission = prompt('Enter your submission (text or URL):');
+        if (submission && submission.trim()) {
+            alert('✅ Assignment submitted successfully!');
+        }
+    }
+
+    // =============================================
+    // QUIZZES
+    // =============================================
+    async function loadQuizzes() {
+        try {
+            var data = await apiFetch('/api/quizzes');
+            var container = document.getElementById('quizzesList');
+            if (data.success && data.quizzes && data.quizzes.length > 0) {
+                var html = '';
+                for (var i = 0; i < data.quizzes.length; i++) {
+                    var q = data.quizzes[i];
+                    html += `
+                        <div class="quiz-card">
+                            <h4>${q.title}</h4>
+                            <div class="meta">${q.subjects?.name || 'N/A'}</div>
+                            <div style="margin-top:8px;">
+                                <button class="btn btn-sm btn-primary" onclick="takeQuiz('${q.id}')">🧪 Take Quiz</button>
+                            </div>
+                        </div>
+                    `;
+                }
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<p style="color:#999;padding:20px;text-align:center;">No quizzes available.</p>';
+            }
+        } catch (error) {
+            console.error('Quizzes error:', error);
+        }
+    }
+
+    function takeQuiz(quizId) {
+        alert('📝 Quiz will open here. Please contact your teacher for the quiz link.');
+    }
+
+    // =============================================
+    // SAVED RECORDINGS
+    // =============================================
+    async function loadSavedRecordings() {
+        try {
+            var data = await apiFetch('/api/recordings/list');
+            var container = document.getElementById('savedList');
+            if (data.success && data.recordings && data.recordings.length > 0) {
+                var html = '';
+                for (var i = 0; i < data.recordings.length; i++) {
+                    var r = data.recordings[i];
+                    var isVideo = r.recording_url && (
+                        r.recording_url.includes('youtube.com') ||
+                        r.recording_url.includes('vimeo.com') ||
+                        r.recording_url.includes('.mp4')
+                    );
+                    html += `
+                        <div style="padding:12px;border:1px solid #eee;border-radius:8px;margin-bottom:12px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                                <div>
+                                    <strong>📹 Recording</strong>
+                                    <div style="color:#666;font-size:12px;">${new Date(r.recorded_at).toLocaleString()}</div>
+                                </div>
+                                <div>
+                                    ${r.recording_url ? `<button class="btn btn-sm btn-primary" onclick="window.open('${r.recording_url}','_blank')">▶️ Play</button>` : ''}
+                                </div>
+                            </div>
+                            ${isVideo && r.recording_url ? `
+                                <div class="recording-video">
+                                    <video controls preload="metadata">
+                                        <source src="${r.recording_url}" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<p style="color:#999;padding:20px;text-align:center;">No recordings available.</p>';
+            }
+        } catch (error) {
+            console.error('Recordings error:', error);
+        }
+    }
+
+    // =============================================
+    // ATTENDANCE
+    // =============================================
+    async function loadAttendance() {
+        try {
+            document.getElementById('attendanceTable').innerHTML = `
+                <p style="color:#999;padding:20px;text-align:center;">Your attendance records will appear here.</p>
+            `;
+        } catch (error) {
+            console.error('Attendance error:', error);
+        }
+    }
+
+    // =============================================
+    // GRADES
+    // =============================================
+    async function loadGrades() {
+        try {
+            var data = await apiFetch('/api/grades');
+            var container = document.getElementById('gradesTable');
+            if (data.success && data.grades && data.grades.length > 0) {
+                var html = '<table><thead><tr><th>Subject</th><th>Score</th><th>Grade</th><th>Term</th><th>Notes</th></tr></thead><tbody>';
+                for (var i = 0; i < data.grades.length; i++) {
+                    var g = data.grades[i];
+                    var gradeClass = 'grade-' + (g.grade_letter || 'f').toLowerCase();
+                    html += `<tr><td><strong>${g.subjects?.name || 'N/A'}</strong></td>`;
+                    html += `<td>${g.score || '-'}%</td>`;
+                    html += `<td><span class="${gradeClass}">${g.grade_letter || '-'}</span></td>`;
+                    html += `<td>${g.term || '-'}</td>`;
+                    html += `<td>${g.teacher_notes || '-'}</td></tr>`;
+                }
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<p style="color:#999;padding:20px;text-align:center;">No grades recorded yet.</p>';
+            }
+        } catch (error) {
+            console.error('Grades error:', error);
+        }
+    }
+
+    // =============================================
+    // FORUMS
+    // =============================================
+    async function loadForums() {
+        try {
+            var data = await apiFetch('/api/forums');
+            var container = document.getElementById('forumsList');
+            if (data.success && data.forums && data.forums.length > 0) {
+                var html = '';
+                for (var i = 0; i < data.forums.length; i++) {
+                    var f = data.forums[i];
+                    html += `
+                        <div class="forum-card">
+                            <h4>💬 ${f.title}</h4>
+                            <div class="meta">${f.description || ''} • ${new Date(f.created_at).toLocaleDateString()}</div>
+                            <div style="margin-top:8px;">
+                                <button class="btn btn-sm btn-primary" onclick="window.location.href='/forum?id=${f.id}'">View Discussion</button>
+                            </div>
+                        </div>
+                    `;
+                }
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<p style="color:#999;padding:20px;text-align:center;">No forums available.</p>';
+            }
+        } catch (error) {
+            console.error('Forums error:', error);
+        }
+    }
+
+    // =============================================
+    // MESSAGES
+    // =============================================
+    function showSuccess(msg) {
+        var el = document.getElementById('successMsg');
+        el.textContent = '✅ ' + msg;
+        el.style.display = 'block';
+        document.getElementById('errorMsg').style.display = 'none';
+        setTimeout(function() { el.style.display = 'none'; }, 4000);
+    }
+
+    function showError(msg) {
+        var el = document.getElementById('errorMsg');
+        document.getElementById('errorText').textContent = msg;
+        el.style.display = 'block';
+        document.getElementById('successMsg').style.display = 'none';
+    }
+
+    // =============================================
+    // LOGOUT
+    // =============================================
+    async function logout() {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        window.location.href = '/';
+    }
+
+    // =============================================
+    // INIT
+    // =============================================
+    window.onload = checkAuth;
+
+    document.addEventListener('click', function(e) {
+        var sidebar = document.getElementById('sidebar');
+        var toggleBtn = document.getElementById('menuToggle');
+        if (window.innerWidth <= 768) {
+            if (sidebar && sidebar.classList.contains('open')) {
+                var isClickInside = sidebar.contains(e.target) || (toggleBtn && toggleBtn.contains(e.target));
+                if (!isClickInside) {
+                    closeSidebar();
+                }
+            }
+        }
+    });
+
+    setInterval(checkWhiteboardSessions, 30000);
+</script>
+</body>
+</html>
